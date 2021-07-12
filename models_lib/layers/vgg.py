@@ -29,7 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from tensorflow import keras
-from tensorflow.keras import layers
 class VGGLayer(keras.layers.Layer):
   def __init__(self, num_convolutions, num_channels):
     super().__init__()

@@ -29,7 +29,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from tensorflow import keras
-class ResidualBlock(keras.layers.Layer):
+
+class _SequentialCompositeLayer(keras.layers.Layer):
   def __init__(self):
     super().__init__()
 
@@ -38,3 +39,7 @@ class ResidualBlock(keras.layers.Layer):
 
   def build(self, input_shape):
     return super().build(input_shape)
+
+  @property
+  def layers(self):
+    return None
