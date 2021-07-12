@@ -29,6 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from tensorflow import keras
+from tensorflow.keras import layers
 class VGGLayer(keras.layers.Layer):
   def __init__(self, num_convolutions, num_channels):
     super().__init__()
@@ -39,7 +40,7 @@ class VGGLayer(keras.layers.Layer):
         "VGGLayer must have a positive, nonzero convolution count.")
 
     self._num_channels = num_channels
-    if self.num_convolutions < 1:
+    if self.num_channels < 1:
       raise ValueError(
         "VGGLayer convolutions must have at least one channel.")
 
@@ -47,29 +48,31 @@ class VGGLayer(keras.layers.Layer):
     self._seq = None
 
   def call(self, inputs, *args, **kwargs):
-      if not (self._layers and self._seq):
+      if not self._layers:
         raise RuntimeError("VGGLayer has not been built.")
 
-      return self._seq(inputs, *args, **kwargs)
+      x = inputs
+      y = None
+      for l in self._layers:
+        y = l(x)
+        x = y
+      return y
 
   def build(self, input_shape):
       super().build(input_shape)
 
-      if self._layers or self._seq:
+      if self._layers:
         raise RuntimeError("VGGLayer has already been built.")
 
-      for _ in range(self.num_channels):
+      for _ in range(self.num_convolutions):
         self._layers += [
           keras.layers.Conv2D(self.num_channels,
                               kernel_size=3,
-                              padding=1,
+                              padding='same',
                               activation='relu'),
           keras.layers.MaxPool2D(pool_size=2,
                                  strides=2)
         ]
-
-      self._seq = keras.Sequential(self._layers)
-      self._seq.build(input_shape)
 
   @property
   def num_convolutions(self):
