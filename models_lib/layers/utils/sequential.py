@@ -30,16 +30,26 @@
 
 from tensorflow import keras
 
-class _SequentialCompositeLayer(keras.layers.Layer):
-  def __init__(self):
+class SequentialLayer(keras.layers.Layer):
+  def __init__(self, layers):
     super().__init__()
 
-  def call(self, inputs, *args, **kwargs):
-    return super().call(inputs, *args, **kwargs)
+    if not layers:
+      raise ValueError("No layers provided.")
 
-  def build(self, input_shape):
-    return super().build(input_shape)
+    self._layers = layers
+
+  def call(self, inputs, *args, **kwargs):
+    if not (self._layers and self.built):
+      raise RuntimeError("Layer has not been built.")
+
+    x = inputs
+    y = None
+    for l in self._layers:
+      y = l(x)
+      x = y
+    return y
 
   @property
   def layers(self):
-    return None
+    return self._layers
