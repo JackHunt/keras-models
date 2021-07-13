@@ -54,7 +54,7 @@ class VGGTests(tf.test.TestCase):
 
   def test_simple_block_train(self):
     x = np.ones((8, 32, 32, 3), dtype=np.float16)
-    y = np.ones((8, 4, 4, 3), dtype=np.float16) * 2.0
+    y = np.ones((8, 16, 16, 3), dtype=np.float16) * 2.0
 
     input_layer = keras.layers.Input(x.shape[1:], dtype=x.dtype)
     
