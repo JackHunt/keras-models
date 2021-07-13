@@ -33,11 +33,40 @@ sys.path.append('..')
 
 import numpy as np
 import tensorflow as tf
+import tensorflow.keras as keras
 
 from models_lib.models.mlp import MLP
 
 import test_utils
 
 class MLPTests(tf.test.TestCase):
+  def test_bad_hidden_count(self):
+    with self.assertRaisesRegex(
+      ValueError,
+      "All hidden layer sizes must be greater than or equal to one."):
+      _ = MLP([1, 2, 0, 3], 3)
+
+  def test_bad_output_count(self):
+    with self.assertRaisesRegex(
+      ValueError,
+      "Output layer size must be greater than or equal to one."):
+      _ = MLP([1, 2, 3], 0)
+  
   def test_simple_train(self):
-    pass
+    x = np.ones((8, 32), dtype=np.float16)
+    y = x * 2.0
+
+    input_layer = keras.layers.Input(x.shape[1:], dtype=x.dtype)
+    
+    mlp = MLP([8, 16], 32)(input_layer)
+    
+    model = keras.Model(inputs=input_layer, outputs=mlp)
+    model.compile('sgd', 'mse')
+
+    history = model.fit(x, y, verbose=False, epochs=3)
+    losses = history.history['loss']
+
+    self.assertTrue(test_utils.monotonically_decreasing(losses))
+
+if __name__ == '__main__':
+  tf.test.main()
