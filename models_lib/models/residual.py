@@ -33,8 +33,8 @@ from models_lib.layers import residual
 from models_lib.layers.utils import sequential
 
 class _ResNet(keras.Model):
-  def __init__(self, arch, *args, **kwargs):
-    super().__init__(*args, **kwargs)
+  def __init__(self, arch, **kwargs):
+    super().__init__(**kwargs)
 
     # Initial "input" block.
     self._initial_block = sequential.SequentialLayer([
@@ -77,7 +77,7 @@ class _ResNet(keras.Model):
     return self._output_block
 
 class ResNet18(_ResNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       # Block 0.
       (
@@ -113,10 +113,10 @@ class ResNet18(_ResNet):
       )
     ]
     
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)
 
 class ResNet34(_ResNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       # Block 0.
       (
@@ -152,10 +152,10 @@ class ResNet34(_ResNet):
       )
     ]
 
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)
 
 class ResNet50(_ResNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       # Block 0.
       (
@@ -199,10 +199,10 @@ class ResNet50(_ResNet):
       ),
     ]
 
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)
 
 class ResNet101(_ResNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       # Block 0.
       (
@@ -246,10 +246,10 @@ class ResNet101(_ResNet):
       ),
     ]
     
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)
 
 class ResNet152(_ResNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       # Block 0.
       (
@@ -293,4 +293,4 @@ class ResNet152(_ResNet):
       ),
     ]
 
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)

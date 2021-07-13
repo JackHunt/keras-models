@@ -33,8 +33,8 @@ from models_lib.layers import vgg
 from models_lib.layers.utils import sequential
 
 class _VGGNet(keras.Model):
-  def __init__(self, arch, *args, **kwargs):
-    super().__init__(*args, **kwargs)
+  def __init__(self, arch, **kwargs):
+    super().__init__(**kwargs)
 
     self._vgg_blocks = sequential.SequentialLayer(
       [vgg.VGGBlock(*nd) for nd in arch])
@@ -46,7 +46,7 @@ class _VGGNet(keras.Model):
       keras.layers.Dense(self.num_classes, activation='softmax')
     ])
 
-  def call(self, inputs, training, mask, features_only=False):
+  def call(self, inputs, features_only=False):
     features = self.vgg_blocks(inputs)
     if features_only:
       return features
@@ -65,7 +65,7 @@ class _VGGNet(keras.Model):
     return self._num_classes
 
 class VGG11(_VGGNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       (1, 64),
       (1, 128),
@@ -74,10 +74,10 @@ class VGG11(_VGGNet):
       (2, 512)
     ]
 
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)
 
 class VGG13(_VGGNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       (2, 64),
       (2, 128),
@@ -86,10 +86,10 @@ class VGG13(_VGGNet):
       (2, 512)
     ]
 
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)
 
 class VGG16(_VGGNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       (2, 64),
       (2, 128),
@@ -98,10 +98,10 @@ class VGG16(_VGGNet):
       (3, 512)
     ]
 
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)
 
 class VGG19(_VGGNet):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, **kwargs):
     arch = [
       (2, 64),
       (2, 128),
@@ -110,4 +110,4 @@ class VGG19(_VGGNet):
       (4, 512)
     ]
 
-    super().__init__(arch, *args, **kwargs)
+    super().__init__(arch, **kwargs)

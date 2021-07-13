@@ -32,8 +32,9 @@ from tensorflow import keras
 from models_lib.layers.utils import sequential
 
 class MLP(keras.Model):
-  def __init__(self, hidden_sizes, output_size, *args, **kwargs):
-    super().__init__(*args, **kwargs)
+  def __init__(self, hidden_sizes, output_size, hidden_act='relu',
+               output_act='relu', **kwargs):
+    super().__init__(**kwargs)
 
     if hidden_sizes:
       if any(n <= 0 for n in hidden_sizes):
@@ -41,7 +42,7 @@ class MLP(keras.Model):
           "All hidden layer sizes must be greater than or equal to one.")
 
       self._hidden = sequential.SequentialLayer(
-        [keras.layers.Dense(n) for n in hidden_sizes])
+        [keras.layers.Dense(n, activation=hidden_act) for n in hidden_sizes])
     else:
       self._hidden = None
 
@@ -49,9 +50,9 @@ class MLP(keras.Model):
       raise ValueError(
           "Output layer size must be greater than or equal to one.")
 
-    self._output_layer = keras.layers.Dense(output_size)
+    self._output_layer = keras.layers.Dense(output_size, activation=output_act)
 
-  def call(self, inputs, training, mask):
+  def call(self, inputs):
     y = self.hidden_layers(inputs)
     return self.output_layer(y)
 
