@@ -35,30 +35,30 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 
-from models_lib.layers.vgg import VGGLayer
+from models_lib.layers.vgg import VGGBlock
 
 import test_utils
 
-class VGGLayerTests(tf.test.TestCase):
+class VGGTests(tf.test.TestCase):
   def test_bad_conv_count(self):
     with self.assertRaisesRegex(
       ValueError,
-      "VGGLayer must have a positive, nonzero convolution count."):
-      _ = VGGLayer(0, 3)
+      "VGGBlock must have a positive, nonzero convolution count."):
+      _ = VGGBlock(0, 3)
 
   def test_bad_channel_count(self):
     with self.assertRaisesRegex(
       ValueError,
-      "VGGLayer convolutions must have at least one channel."):
-      _ = VGGLayer(3, 0)
+      "VGGBlock convolutions must have at least one channel."):
+      _ = VGGBlock(3, 0)
 
-  def test_simple_train(self):
+  def test_simple_block_train(self):
     x = np.ones((8, 32, 32, 3), dtype=np.float16)
     y = np.ones((8, 4, 4, 3), dtype=np.float16) * 2.0
 
     input_layer = keras.layers.Input(x.shape[1:], dtype=x.dtype)
     
-    vgg = VGGLayer(3, 3)(input_layer)
+    vgg = VGGBlock(3, 3)(input_layer)
     
     model = keras.Model(inputs=input_layer, outputs=vgg)
     model.compile('sgd', 'mse')

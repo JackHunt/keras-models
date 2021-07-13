@@ -29,49 +29,29 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from tensorflow import keras
-class VGGLayer(keras.layers.Layer):
+from models_lib.layers.utils import sequential
+class VGGBlock(sequential.SequentialLayer):
   def __init__(self, num_convolutions, num_channels):
-    super().__init__()
-
     self._num_convolutions = num_convolutions
     if self.num_convolutions <= 0:
       raise ValueError(
-        "VGGLayer must have a positive, nonzero convolution count.")
+        "VGGBlock must have a positive, nonzero convolution count.")
 
     self._num_channels = num_channels
     if self.num_channels < 1:
       raise ValueError(
-        "VGGLayer convolutions must have at least one channel.")
+        "VGGBlock convolutions must have at least one channel.")
 
-    self._layers = []
-    self._seq = None
+    layers = []
+    for _ in range(self.num_convolutions):
+      layers.append(keras.layers.Conv2D(self.num_channels,
+                                        kernel_size=3,
+                                        padding='same',
+                                        activation='relu'))
+    
+    layers.append(keras.layers.MaxPool2D(pool_size=2, strides=2))
 
-  def call(self, inputs, *args, **kwargs):
-      if not self._layers:
-        raise RuntimeError("VGGLayer has not been built.")
-
-      x = inputs
-      y = None
-      for l in self._layers:
-        y = l(x)
-        x = y
-      return y
-
-  def build(self, input_shape):
-      super().build(input_shape)
-
-      if self._layers:
-        raise RuntimeError("VGGLayer has already been built.")
-
-      for _ in range(self.num_convolutions):
-        self._layers += [
-          keras.layers.Conv2D(self.num_channels,
-                              kernel_size=3,
-                              padding='same',
-                              activation='relu'),
-          keras.layers.MaxPool2D(pool_size=2,
-                                 strides=2)
-        ]
+    super().__init__(layers)
 
   @property
   def num_convolutions(self):
