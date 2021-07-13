@@ -31,6 +31,14 @@
 from tensorflow import keras
 
 class SequentialLayer(keras.layers.Layer):
+  """This class provides a layer that serves to encapsulate a collection
+  of layers to be executed in a sequential manner. This class provides
+  a single-input, single-output "block" of constituent layers, for which
+  the input to layer `n+1` is the output of layer `n`.
+
+  Arguments:
+    layers: A list of layers to be executed in sequence.
+  """
   def __init__(self, layers):
     super().__init__()
 
@@ -39,7 +47,7 @@ class SequentialLayer(keras.layers.Layer):
 
     self._layers = layers
 
-  def call(self, inputs, *args, **kwargs):
+  def call(self, inputs):
     if not (self._layers and self.built):
       raise RuntimeError("Layer has not been built.")
 

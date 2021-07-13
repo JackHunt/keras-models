@@ -32,8 +32,26 @@ from tensorflow import keras
 from models_lib.layers.utils import sequential
 
 class ResidualBlock(keras.layers.Layer):
+  """This class implements the "Residual Block" component of the ResNet
+  family of CNN architectures. Each `ResidualBlock` consists of the 
+  following components (executed in the given order).
+
+  - 2D Convolution
+  - Batch Normalization
+  - 2D Convolution (stride 1)
+  - Optional 2D Convolution (kernel size 1, stride 2, for downsampling)
+  - Batch Normalization
+
+  Arguments:
+    kernel_size: The size of the 2D convolution kernels.
+    num_filters: The number of filters to use in the first two convolutions.
+    num_downsample_filters: The number of filters to use in the third,
+      downsampling convolution. Defaults to 0, disabling downsampling.
+    kernel_size_b: An optional kernel size for the second convolution, should
+      it need to differ from the first.
+  """
   def __init__(self, kernel_size, num_filters,
-              num_downsample_filters=0, kernel_size_b=None):
+               num_downsample_filters=0, kernel_size_b=None):
     super().__init__()
 
     self._kernel_size = kernel_size
@@ -81,7 +99,7 @@ class ResidualBlock(keras.layers.Layer):
 
     self._bn = keras.layers.BatchNormalization()
 
-  def call(self, inputs, *args, **kwargs):
+  def call(self, inputs):
     y = self._conv(inputs)
     
     if self.downsampling:

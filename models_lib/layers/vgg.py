@@ -31,20 +31,31 @@
 from tensorflow import keras
 from models_lib.layers.utils import sequential
 class VGGBlock(sequential.SequentialLayer):
-  def __init__(self, num_convolutions, num_channels):
+  """This class implements the "VGG Block" component of the VGG-x
+  family of CNN architectures. Each `VGGBlock` consists of the 
+  following components (executed in the given order).
+
+  - A number of 2D Convolutions
+  - 2D Max Pooling
+
+  Arguments:
+    num_convolutions: The number of convolution kernels.
+    num_filters: The number of filters to use in the convolutions.
+  """
+  def __init__(self, num_convolutions, num_filters):
     self._num_convolutions = num_convolutions
     if self.num_convolutions <= 0:
       raise ValueError(
         "VGGBlock must have a positive, nonzero convolution count.")
 
-    self._num_channels = num_channels
-    if self.num_channels < 1:
+    self._num_filters = num_filters
+    if self.num_filters < 1:
       raise ValueError(
         "VGGBlock convolutions must have at least one channel.")
 
     layers = []
     for _ in range(self.num_convolutions):
-      layers.append(keras.layers.Conv2D(self.num_channels,
+      layers.append(keras.layers.Conv2D(filters=self.num_filters,
                                         kernel_size=3,
                                         padding='same',
                                         activation='relu'))
@@ -58,5 +69,5 @@ class VGGBlock(sequential.SequentialLayer):
     return self._num_convolutions
 
   @property
-  def num_channels(self):
-    return self._num_channels
+  def num_filters(self):
+    return self._num_filters
