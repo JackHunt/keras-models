@@ -29,12 +29,84 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from tensorflow import keras
+from models_lib.layers.utils import sequential
+
 class ResidualBlock(keras.layers.Layer):
-  def __init__(self):
+  def __init__(self, kernel_size, num_filters,
+              num_downsample_filters=0, kernel_size_b=None):
     super().__init__()
 
-  def call(self, inputs, *args, **kwargs):
-    return super().call(inputs, *args, **kwargs)
+    self._kernel_size = kernel_size
+    if self.kernel_size < 1:
+      raise ValueError(
+        "ResidualBlock kernel_size must be greater than or equal to one.")
 
-  def build(self, input_shape):
-    return super().build(input_shape)
+    self._kernel_size_b = kernel_size_b
+    if self.kernel_size_b:
+      if self._kernel_size_b < 1:
+        raise ValueError(
+          "ResidualBlock kernel_size_b must be greater than or equal to one.")
+    else:
+      self._kernel_size_b = self.kernel_size
+
+    self._num_filters = num_filters
+    if self._num_filters < 1:
+      raise ValueError(
+        "ResidualBlock num_filters must be greater than or equal to one.")
+
+    self._num_downsample_filters = num_downsample_filters
+    self._downsampling = self.num_downsample_filters > 0
+
+    self._conv = sequential.SequentialLayer(
+      [
+        keras.layers.Conv2D(kernel_size=self.kernel_size,
+                            strides=(2, 2) if self.downsampling else (1, 1),
+                            filters=self.num_filters,
+                            padding='same',
+                            activation='relu'),
+        keras.layers.BatchNormalization(),
+        keras.layers.Conv2D(kernel_size=self.kernel_size_b,
+                            strides=(1, 1),
+                            filters=self.num_filters,
+                            padding='same',
+                            activation='relu')
+      ])
+
+    if self.downsampling:
+      self._ds = keras.layers.Conv2D(kernel_size=1,
+                                     strides=2,
+                                     filters=self.num_downsample_filters,
+                                     padding='same',
+                                     activation='relu')
+
+    self._bn = keras.layers.BatchNormalization()
+
+  def call(self, inputs, *args, **kwargs):
+    y = self._conv(inputs)
+    
+    if self.downsampling:
+      inputs = self._ds(inputs)
+    
+    y = keras.layers.Add()([y, inputs])
+    y = keras.layers.ReLU()(y)
+    return self._bn(y)
+
+  @property
+  def kernel_size(self):
+    return self._kernel_size
+
+  @property
+  def kernel_size_b(self):
+    return self._kernel_size_b
+
+  @property
+  def num_filters(self):
+    return self._num_filters
+
+  @property
+  def downsampling(self):
+    return self._downsampling
+
+  @property
+  def num_downsample_filters(self):
+    return self._num_downsample_filters
