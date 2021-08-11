@@ -53,3 +53,9 @@ case $yn in
     [Yy]* ) pip3 install --upgrade tensorflow-gpu;;
     [Nn]* ) pip3 install --upgrade tensorflow;;
 esac
+
+echo "Installing scikit-learn"
+pip3 install --upgrade scikit-learn
+
+echo "Installing matplotlib"
+pip3 install --upgrade matplotlib
