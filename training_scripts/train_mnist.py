@@ -31,34 +31,38 @@
 import sys
 sys.path.append('..')
 
+import argparse
 import tensorflow as tf
-from sklearn import datasets
 
-from models_lib.models.mlp import MLP
+def create_dataset(batch_size=16):
+  pass
 
-def create_dataset(batch_size=4):
-  iris = datasets.load_iris()
-  x = iris['data']
-  t = tf.keras.utils.to_categorical(iris['target'])
+def create_resnet(arch=18):
+  pass
 
-  iris_ds = tf.data.Dataset.from_tensor_slices((x, t))
-  iris_ds = iris_ds.batch(batch_size)
-  return iris_ds
+def create_vgg(arch=8):
+  pass
 
-def create_model():
-  return tf.keras.Sequential([
-    MLP([16, 8, 4], 3,
-        hidden_act='sigmoid',
-        output_act='sigmoid')
-  ])
+def train_model(model, epochs, learning_rate):
+  pass
 
-def do_training():
-  ds = create_dataset()
-  model = create_model()
-  opt = tf.keras.optimizers.SGD(0.1)
-  model.compile(optimizer=opt, loss='mse')
-
-  model.fit(ds, epochs=300, validation_split=0.2)
-  
 if __name__=='__main__':
-  do_training()
+  parser = argparse.ArgumentParser(description='Train a net on MNIST.')
+  parser.add_argument('model_type', type=str)
+  parser.add_argument('model_arch', type=int)
+  parser.add_argument('--epochs', type=int, default=50)
+  parser.add_argument('--learning_rate', type=float, default=0.01)
+
+  args = parser.parse_args()
+
+  model_type = args.model_type
+  model_arch = args.model_arch
+  if model_type == 'resnet':
+    pass
+  elif model_type == 'vgg':
+    pass
+  else:
+    raise ValueError("Model type %s is invalid." % model_type)
+
+  num_epochs = args.epochs
+  learning_rate = args.learning_rate
