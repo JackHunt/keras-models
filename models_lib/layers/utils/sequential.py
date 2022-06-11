@@ -58,6 +58,17 @@ class SequentialLayer(keras.layers.Layer):
       x = y
     return y
 
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+      'layers': self._layers
+    })
+    return config
+
+  @classmethod
+  def from_config(cls, config):
+    return SequentialLayer(**config)
+
   @property
   def layers(self):
     return self._layers

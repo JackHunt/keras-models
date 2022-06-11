@@ -64,6 +64,18 @@ class VGGBlock(sequential.SequentialLayer):
 
     super().__init__(layers)
 
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+      'num_convolutions': self._num_convolutions,
+      'num_filters': self._num_filters
+    })
+    return config
+
+  @classmethod
+  def from_config(cls, config):
+    return VGGBlock(**config)
+
   @property
   def num_convolutions(self):
     return self._num_convolutions

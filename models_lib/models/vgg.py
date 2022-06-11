@@ -52,6 +52,13 @@ class _VGGNet(keras.Model):
       return features
     return self.classifier_block(features)
 
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+      'arch': self.arch
+    })
+    return config
+
   @property
   def vgg_blocks(self):
     return self._vgg_blocks
@@ -76,6 +83,10 @@ class VGG11(_VGGNet):
 
     super().__init__(arch, **kwargs)
 
+  @classmethod
+  def from_config(cls, config):
+    return VGG11(**config)
+
 class VGG13(_VGGNet):
   def __init__(self, **kwargs):
     arch = [
@@ -87,6 +98,10 @@ class VGG13(_VGGNet):
     ]
 
     super().__init__(arch, **kwargs)
+
+  @classmethod
+  def from_config(cls, config):
+    return VGG13(**config)
 
 class VGG16(_VGGNet):
   def __init__(self, **kwargs):
@@ -100,6 +115,10 @@ class VGG16(_VGGNet):
 
     super().__init__(arch, **kwargs)
 
+  @classmethod
+  def from_config(cls, config):
+    return VGG16(**config)
+
 class VGG19(_VGGNet):
   def __init__(self, **kwargs):
     arch = [
@@ -111,3 +130,7 @@ class VGG19(_VGGNet):
     ]
 
     super().__init__(arch, **kwargs)
+
+  @classmethod
+  def from_config(cls, config):
+    return VGG19(**config)

@@ -36,25 +36,62 @@ class MLP(keras.Model):
                output_act='relu', **kwargs):
     super().__init__(**kwargs)
 
-    if hidden_sizes:
-      if any(n <= 0 for n in hidden_sizes):
+    self._hidden_sizes = hidden_sizes
+    self._output_size = output_size
+    self._hidden_act = hidden_act
+    self._output_act = output_act
+
+    if self.hidden_sizes:
+      if any(n <= 0 for n in self.hidden_sizes):
         raise ValueError(
           "All hidden layer sizes must be greater than or equal to one.")
 
       self._hidden = sequential.SequentialLayer(
-        [keras.layers.Dense(n, activation=hidden_act) for n in hidden_sizes])
+        [keras.layers.Dense(
+          n, activation=self.hidden_act) for n in self.hidden_sizes])
     else:
       self._hidden = None
 
-    if output_size <= 0:
+    if self.output_size <= 0:
       raise ValueError(
           "Output layer size must be greater than or equal to one.")
 
-    self._output_layer = keras.layers.Dense(output_size, activation=output_act)
+    self._output_layer = keras.layers.Dense(
+      self.output_size, activation=self.output_act)
 
   def call(self, inputs):
     y = self.hidden_layers(inputs)
     return self.output_layer(y)
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+      'hidden_sizes': self.hidden_sizes,
+      'output_size': self.output_size,
+      'hidden_act': self.hidden_act,
+      'output_act': self.output_act
+    })
+    return config
+
+  @classmethod
+  def from_config(cls, config):
+    return MLP(**config)
+
+  @property
+  def hidden_sizes(self):
+    return self._hidden_sizes
+
+  @property
+  def output_size(self):
+    return self._output_size
+
+  @property
+  def hidden_act(self):
+    self._hidden_act
+
+  @property
+  def output_act(self):
+    return self._output_act
 
   @property
   def hidden_layers(self):

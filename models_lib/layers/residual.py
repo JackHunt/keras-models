@@ -109,6 +109,20 @@ class ResidualBlock(keras.layers.Layer):
     y = keras.layers.ReLU()(y)
     return self._bn(y)
 
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+      'kernel_size': self._kernel_size,
+      'num_filters': self._num_filters,
+      'num_downsample_filters': self._num_downsample_filters,
+      'kernel_size_b': self._kernel_size_b,
+    })
+    return config
+
+  @classmethod
+  def from_config(cls, config):
+    return ResidualBlock(**config)
+
   @property
   def kernel_size(self):
     return self._kernel_size

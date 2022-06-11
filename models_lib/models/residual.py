@@ -36,6 +36,8 @@ class _ResNet(keras.Model):
   def __init__(self, arch, **kwargs):
     super().__init__(**kwargs)
 
+    self._arch = arch
+
     # Initial "input" block.
     self._initial_block = sequential.SequentialLayer([
       keras.layers.Conv2D(kernel_size=(7, 7),
@@ -48,7 +50,7 @@ class _ResNet(keras.Model):
 
     # Residual blocks.
     blk = []
-    for c, n in arch:
+    for c, n in self.arch:
       blk.append(sequential.SequentialLayer([residual.ResidualBlock(**c)] * n))
     self._residual_blocks = sequential.SequentialLayer(blk)
 
@@ -63,6 +65,17 @@ class _ResNet(keras.Model):
     y = self.initial_block(inputs)
     y = self.residual_blocks(y)
     return self.output_block(y)
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+      'arch': self.arch
+    })
+    return config
+
+  @property
+  def arch(self):
+    return self._arch
 
   @property
   def initial_block(self):
@@ -115,6 +128,10 @@ class ResNet18(_ResNet):
     
     super().__init__(arch, **kwargs)
 
+  @classmethod
+  def from_config(cls, config):
+    return ResNet18(**config)
+
 class ResNet34(_ResNet):
   def __init__(self, **kwargs):
     arch = [
@@ -153,6 +170,10 @@ class ResNet34(_ResNet):
     ]
 
     super().__init__(arch, **kwargs)
+
+  @classmethod
+  def from_config(cls, config):
+    return ResNet34(**config)
 
 class ResNet50(_ResNet):
   def __init__(self, **kwargs):
@@ -201,6 +222,10 @@ class ResNet50(_ResNet):
 
     super().__init__(arch, **kwargs)
 
+  @classmethod
+  def from_config(cls, config):
+    return ResNet50(**config)
+
 class ResNet101(_ResNet):
   def __init__(self, **kwargs):
     arch = [
@@ -248,6 +273,10 @@ class ResNet101(_ResNet):
     
     super().__init__(arch, **kwargs)
 
+  @classmethod
+  def from_config(cls, config):
+    return ResNet101(**config)
+
 class ResNet152(_ResNet):
   def __init__(self, **kwargs):
     arch = [
@@ -294,3 +323,7 @@ class ResNet152(_ResNet):
     ]
 
     super().__init__(arch, **kwargs)
+
+  @classmethod
+  def from_config(cls, config):
+    return ResNet152(**config)
