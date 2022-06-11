@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 
-# Copyright (c) 2021, Jack Hunt
+# Copyright (c) 2022, Jack Hunt
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -134,3 +134,18 @@ class VGG19(_VGGNet):
   @classmethod
   def from_config(cls, config):
     return VGG19(**config)
+
+def vgg(arch=11):
+  if arch == 11:
+    return VGG11()
+  
+  if arch == 13:
+    return VGG13()
+
+  if arch == 16:
+    return VGG16()
+
+  if arch == 19:
+    return VGG19()
+
+  raise ValueError("Invalid VGG architecture.")

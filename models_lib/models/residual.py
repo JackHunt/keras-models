@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 
-# Copyright (c) 2021, Jack Hunt
+# Copyright (c) 2022, Jack Hunt
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -327,3 +327,21 @@ class ResNet152(_ResNet):
   @classmethod
   def from_config(cls, config):
     return ResNet152(**config)
+
+def resnet(arch=18):
+  if arch == 18:
+    return ResNet18()
+
+  if arch == 34:
+    return ResNet34()
+
+  if arch == 50:
+    return ResNet50()
+
+  if arch == 101:
+    return ResNet101()
+
+  if arch == 152:
+    return ResNet152()
+
+  raise ValueError("Invalid ResNet architecture.")

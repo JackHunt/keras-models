@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 
-# Copyright (c) 2021, Jack Hunt
+# Copyright (c) 2022, Jack Hunt
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -34,13 +34,13 @@ sys.path.append('..')
 import argparse
 import tensorflow as tf
 
+from models_lib.models.vgg import vgg
+from models_lib.models.residual import resnet
+
 def create_dataset(batch_size=16):
   pass
 
 def create_resnet(arch=18):
-  pass
-
-def create_vgg(arch=8):
   pass
 
 def train_model(model, epochs, learning_rate):
