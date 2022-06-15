@@ -57,12 +57,16 @@ if __name__=='__main__':
 
   model_type = args.model_type
   model_arch = args.model_arch
-  if model_type == 'resnet':
-    pass
-  elif model_type == 'vgg':
-    pass
+  if model_type in ('resnet', 'Resnet', 'ResNet'):
+    model = resnet(model_arch)
+  elif model_type in ('vgg', 'VGG'):
+    model = vgg(model_arch)
   else:
     raise ValueError("Model type %s is invalid." % model_type)
 
   num_epochs = args.epochs
   learning_rate = args.learning_rate
+
+  train_model(model,
+              epochs=num_epochs,
+              learning_rate=learning_rate)
