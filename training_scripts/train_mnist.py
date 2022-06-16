@@ -44,7 +44,6 @@ def create_dataset(batch_size=16, dtype=tf.float32):
   def data_pipeline(ds, training=True):
     f = lambda x,t: tf.cast(x, dtype) / 255., t
 
-<<<<<<< HEAD
     ds = ds_train.map(f, num_parallel_calls=tf.data.AUTOTUNE)
     ds = ds.cache()
 
@@ -69,7 +68,7 @@ def create_dataset(batch_size=16, dtype=tf.float32):
 
 
 def create_model(model_type, arch):
-  if model_type == 'resnet':
+  if model_type in ('resnet', 'Resnet', 'ResNet'):
     resnet_archs = (18, 34, 50, 101, 152)
     if not arch in resnet_archs:
       raise ValueError(
@@ -78,7 +77,7 @@ def create_model(model_type, arch):
 
     return resnet(arch)
   
-  if model_type == 'vgg':
+  if model_type in ('vgg', 'VGG'):
     vgg_archs = (11, 13, 16, 19)
     if not arch in vgg_archs:
       raise ValueError(
@@ -92,12 +91,12 @@ def create_model(model_type, arch):
 def create_optimiser(lr):
   return 
 
-=======
->>>>>>> b14df48f6203e65d6df7e539af57ae5cb17b33a2
-def train_model(model, epochs, learning_rate):
+def train_model(model_fn, data_fn, epochs, learning_rate):
   mirrored_strategy = tf.distribute.MirroredStrategy()
   with mirrored_strategy.scope():
-    model.fit()
+    dataset = data_fn()
+    model = model_fn()
+    model.fit(dataset)
 
 if __name__=='__main__':
   parser = argparse.ArgumentParser(description='Train a net on MNIST.')
@@ -111,23 +110,15 @@ if __name__=='__main__':
 
   model_type = args.model_type
   model_arch = args.model_arch
-<<<<<<< HEAD
   model_fn = partial(create_model, model_type, model_arch)
 
   batch_size = args.batch_size
   dataset_fn = partial(create_dataset, batch_size)
-=======
-  if model_type in ('resnet', 'Resnet', 'ResNet'):
-    model = resnet(model_arch)
-  elif model_type in ('vgg', 'VGG'):
-    model = vgg(model_arch)
-  else:
-    raise ValueError("Model type %s is invalid." % model_type)
->>>>>>> b14df48f6203e65d6df7e539af57ae5cb17b33a2
 
   num_epochs = args.epochs
   learning_rate = args.learning_rate
 
-  train_model(model,
+  train_model(model_fn,
+              dataset_fn,
               epochs=num_epochs,
               learning_rate=learning_rate)
