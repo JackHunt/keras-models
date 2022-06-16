@@ -44,6 +44,7 @@ def create_dataset(batch_size=16, dtype=tf.float32):
   def data_pipeline(ds, training=True):
     f = lambda x,t: tf.cast(x, dtype) / 255., t
 
+<<<<<<< HEAD
     ds = ds_train.map(f, num_parallel_calls=tf.data.AUTOTUNE)
     ds = ds.cache()
 
@@ -91,8 +92,12 @@ def create_model(model_type, arch):
 def create_optimiser(lr):
   return 
 
+=======
+>>>>>>> b14df48f6203e65d6df7e539af57ae5cb17b33a2
 def train_model(model, epochs, learning_rate):
-  pass
+  mirrored_strategy = tf.distribute.MirroredStrategy()
+  with mirrored_strategy.scope():
+    model.fit()
 
 if __name__=='__main__':
   parser = argparse.ArgumentParser(description='Train a net on MNIST.')
@@ -106,10 +111,23 @@ if __name__=='__main__':
 
   model_type = args.model_type
   model_arch = args.model_arch
+<<<<<<< HEAD
   model_fn = partial(create_model, model_type, model_arch)
 
   batch_size = args.batch_size
   dataset_fn = partial(create_dataset, batch_size)
+=======
+  if model_type in ('resnet', 'Resnet', 'ResNet'):
+    model = resnet(model_arch)
+  elif model_type in ('vgg', 'VGG'):
+    model = vgg(model_arch)
+  else:
+    raise ValueError("Model type %s is invalid." % model_type)
+>>>>>>> b14df48f6203e65d6df7e539af57ae5cb17b33a2
 
   num_epochs = args.epochs
   learning_rate = args.learning_rate
+
+  train_model(model,
+              epochs=num_epochs,
+              learning_rate=learning_rate)
