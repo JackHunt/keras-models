@@ -33,15 +33,63 @@ sys.path.append('..')
 
 import argparse
 import tensorflow as tf
+import tensorflow_datasets as tfds
+
+from functools import partial
 
 from models_lib.models.vgg import vgg
 from models_lib.models.residual import resnet
 
-def create_dataset(batch_size=16):
-  pass
+def create_dataset(batch_size=16, dtype=tf.float32):
+  def data_pipeline(ds, training=True):
+    f = lambda x,t: tf.cast(x, dtype) / 255., t
 
-def create_resnet(arch=18):
-  pass
+    ds = ds_train.map(f, num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.cache()
+
+    if training:
+      ds = ds.shuffle(ds_info.splits['train'].num_examples)
+
+    ds = ds.batch(128)
+    ds = ds.prefetch(tf.data.AUTOTUNE)
+
+    return ds
+
+
+  (ds_train, ds_test), ds_info = tfds.load(
+    'mnist',
+    split=['train', 'test'],
+    shuffle_files=True,
+    as_supervised=True,
+    with_info=False
+  )
+
+  return data_pipeline(ds_train), data_pipeline(ds_test, False)
+
+
+def create_model(model_type, arch):
+  if model_type == 'resnet':
+    resnet_archs = (18, 34, 50, 101, 152)
+    if not arch in resnet_archs:
+      raise ValueError(
+        "Invalid Resnet architecture. Architecture must be one of %s"
+        % resnet_archs)
+
+    return resnet(arch)
+  
+  if model_type == 'vgg':
+    vgg_archs = (11, 13, 16, 19)
+    if not arch in vgg_archs:
+      raise ValueError(
+        "Invalid VGG architecture. Architecture must be one of %s"
+        % vgg_archs)
+
+    return vgg(arch)
+
+  raise ValueError("Model type %s is invalid." % model_type)
+
+def create_optimiser(lr):
+  return 
 
 def train_model(model, epochs, learning_rate):
   pass
@@ -50,6 +98,7 @@ if __name__=='__main__':
   parser = argparse.ArgumentParser(description='Train a net on MNIST.')
   parser.add_argument('model_type', type=str)
   parser.add_argument('model_arch', type=int)
+  parser.add_argument('--batch_size', type=int, default=128)
   parser.add_argument('--epochs', type=int, default=50)
   parser.add_argument('--learning_rate', type=float, default=0.01)
 
@@ -57,12 +106,10 @@ if __name__=='__main__':
 
   model_type = args.model_type
   model_arch = args.model_arch
-  if model_type == 'resnet':
-    pass
-  elif model_type == 'vgg':
-    pass
-  else:
-    raise ValueError("Model type %s is invalid." % model_type)
+  model_fn = partial(create_model, model_type, model_arch)
+
+  batch_size = args.batch_size
+  dataset_fn = partial(create_dataset, batch_size)
 
   num_epochs = args.epochs
   learning_rate = args.learning_rate
