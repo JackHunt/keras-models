@@ -29,10 +29,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from tensorflow import keras
-from models_lib.layers.utils import sequential
-class VGGBlock(sequential.SequentialLayer):
+from models_lib.layers.utils.sequential import SequentialLayer
+class VGGBlock(SequentialLayer):
   """This class implements the "VGG Block" component of the VGG-x
-  family of CNN architectures. Each `VGGBlock` consists of the 
+  family of CNN architectures. Each `VGGBlock` consists of the
   following components (executed in the given order).
 
   - A number of 2D Convolutions
@@ -83,3 +83,46 @@ class VGGBlock(sequential.SequentialLayer):
   @property
   def num_filters(self):
     return self._num_filters
+
+class VGGClassifier(SequentialLayer):
+  """This class implements the "VGG Classifier" component of the VGG-x
+  family of CNN architectures. Each `VGGClassifier` consists of the 
+  following components (executed in the given order).
+
+  - A Flatten Layer
+  - A Dense layer of 4096 units and relu activation
+  - A Dense layer of 4096 units and relu activation
+  - A Dense layer of `num_classes` units and softmax activation.
+
+  Arguments:
+    num_classes: The number of output classes.
+  """
+  def __init__(self, num_classes):
+    if num_classes < 0:
+      raise ValueError("VGGClassifier num_classes must be nonnegative.")
+
+    self._num_classes = num_classes
+
+    layers = [
+      keras.layers.Flatten(),
+      keras.layers.Dense(4096, activation='relu'),
+      keras.layers.Dense(4096, activation='relu'),
+      keras.layers.Dense(self.num_classes, activation='softmax')
+    ]
+
+    super().__init__(layers)
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+      'num_classes': self.num_classes
+    })
+    return config
+
+  @classmethod
+  def from_config(cls, config):
+    return VGGClassifier(**config)
+
+  @property
+  def num_classes(self):
+    return self._num_classes

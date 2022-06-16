@@ -40,11 +40,10 @@ from models_lib.models.residual import resnet
 def create_dataset(batch_size=16):
   pass
 
-def create_resnet(arch=18):
-  pass
-
 def train_model(model, epochs, learning_rate):
-  pass
+  mirrored_strategy = tf.distribute.MirroredStrategy()
+  with mirrored_strategy.scope():
+    model.fit()
 
 if __name__=='__main__':
   parser = argparse.ArgumentParser(description='Train a net on MNIST.')
