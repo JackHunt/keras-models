@@ -42,7 +42,7 @@ from models_lib.models.residual import resnet
 
 def create_dataset(batch_size=16, dtype=tf.float32):
   def data_pipeline(ds, training=True):
-    f = lambda x,t: tf.cast(x, dtype) / 255., t
+    f = lambda x,t: (tf.cast(x, dtype) / 255., t)
 
     ds = ds_train.map(f, num_parallel_calls=tf.data.AUTOTUNE)
     ds = ds.cache()
@@ -50,7 +50,7 @@ def create_dataset(batch_size=16, dtype=tf.float32):
     if training:
       ds = ds.shuffle(ds_info.splits['train'].num_examples)
 
-    ds = ds.batch(128)
+    ds = ds.batch(batch_size)
     ds = ds.prefetch(tf.data.AUTOTUNE)
 
     return ds
@@ -61,7 +61,7 @@ def create_dataset(batch_size=16, dtype=tf.float32):
     split=['train', 'test'],
     shuffle_files=True,
     as_supervised=True,
-    with_info=False
+    with_info=True
   )
 
   return data_pipeline(ds_train), data_pipeline(ds_test, False)
@@ -88,15 +88,18 @@ def create_model(model_type, arch):
 
   raise ValueError("Model type %s is invalid." % model_type)
 
-def create_optimiser(lr):
-  return 
+def opt_fn(lr):
+  return tf.keras.optimizers.SGD(lr)
 
 def train_model(model_fn, data_fn, epochs, learning_rate):
   mirrored_strategy = tf.distribute.MirroredStrategy()
   with mirrored_strategy.scope():
-    dataset = data_fn()
+    ds_train, ds_test = data_fn()
     model = model_fn()
-    model.fit(dataset)
+
+    model.compile(opt_fn(learning_rate), 'mse')
+    model.fit(ds_train,
+              epochs=epochs)
 
 if __name__=='__main__':
   parser = argparse.ArgumentParser(description='Train a net on MNIST.')
