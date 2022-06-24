@@ -28,100 +28,155 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-sys.path.append('..')
+"""Trains and tests a CNN model on the MNIST digits dataset.
+
+Raises:
+    ValueError: If an invalid batch size is provided.
+    ValueError: If an invalid learning rate is provided.
+"""
 
 import argparse
-import tensorflow as tf
-import tensorflow_datasets as tfds
-
+import typing
 from functools import partial
 
-from models_lib.models.vgg import vgg
+import tensorflow_datasets as tfds
+import tensorflow as tf
+
 from models_lib.models.residual import resnet
-
-def create_dataset(batch_size=16, dtype=tf.float32):
-  def data_pipeline(ds, training=True):
-    f = lambda x,t: (tf.cast(x, dtype) / 255., t)
-
-    ds = ds_train.map(f, num_parallel_calls=tf.data.AUTOTUNE)
-    ds = ds.cache()
-
-    if training:
-      ds = ds.shuffle(ds_info.splits['train'].num_examples)
-
-    ds = ds.batch(batch_size)
-    ds = ds.prefetch(tf.data.AUTOTUNE)
-
-    return ds
+from models_lib.models.vgg import vgg
 
 
-  (ds_train, ds_test), ds_info = tfds.load(
-    'mnist',
-    split=['train', 'test'],
-    shuffle_files=True,
-    as_supervised=True,
-    with_info=True
-  )
+def create_dataset(batch_size: int = 16,
+                   dtype: tf.DType = tf.float32):
+    """Creates two MNIST datasets, one for training and one
+    for testing.
 
-  return data_pipeline(ds_train), data_pipeline(ds_test, False)
+    Args:
+        batch_size (int, optional): The batch size for the dataset. Defaults to 16.
+        dtype (tf.DType, optional): The dtype of the output data. Defaults to tf.float32.
+    """
+    def data_pipeline(ds: tf.data.Dataset,
+                      training: bool = True):
+        f = lambda x, t: (tf.cast(x, dtype) / 255., t)
+
+        ds = ds_train.map(f, num_parallel_calls=tf.data.AUTOTUNE)
+        ds = ds.cache()
+
+        if training:
+            ds = ds.shuffle(ds_info.splits['train'].num_examples)
+
+        ds = ds.batch(batch_size)
+        ds = ds.prefetch(tf.data.AUTOTUNE)
+
+        return ds
+
+    (ds_train, ds_test), ds_info = tfds.load(
+        'mnist',
+        split=['train', 'test'],
+        shuffle_files=True,
+        as_supervised=True,
+        with_info=True
+    )
+
+    return data_pipeline(ds_train), data_pipeline(ds_test, False)
 
 
-def create_model(model_type, arch):
-  if model_type in ('resnet', 'Resnet', 'ResNet'):
-    resnet_archs = (18, 34, 50, 101, 152)
-    if not arch in resnet_archs:
-      raise ValueError(
-        "Invalid Resnet architecture. Architecture must be one of %s"
-        % resnet_archs)
+def create_model(m_type: str, m_arch: int) -> tf.keras.Model:
+    """_summary_
 
-    return resnet(arch)
-  
-  if model_type in ('vgg', 'VGG'):
-    vgg_archs = (11, 13, 16, 19)
-    if not arch in vgg_archs:
-      raise ValueError(
-        "Invalid VGG architecture. Architecture must be one of %s"
-        % vgg_archs)
+    Args:
+        m_type (str): The string description of the model.
+        m_arch (int): The integer identifier of the model architecture.
 
-    return vgg(arch)
+    Raises:
+        ValueError: If an invalid model type is requested.
+        ValueError: If an invalid model architecture is requested.
 
-  raise ValueError("Model type %s is invalid." % model_type)
+    Returns:
+        tf.keras.Model: An initialised Keras model of the requested architecture.
+    """
+    if m_type in ('resnet', 'Resnet', 'ResNet'):
+        resnet_archs = (18, 34, 50, 101, 152)
+        if not m_arch in resnet_archs:
+            raise ValueError(
+                f"Invalid Resnet architecture. Architecture must be one of {resnet_archs}")
 
-def opt_fn(lr):
-  return tf.keras.optimizers.SGD(lr)
+        return resnet(m_arch)
 
-def train_model(model_fn, data_fn, epochs, learning_rate):
-  mirrored_strategy = tf.distribute.MirroredStrategy()
-  with mirrored_strategy.scope():
-    ds_train, ds_test = data_fn()
-    model = model_fn()
+    if m_type in ('vgg', 'VGG'):
+        vgg_archs = (11, 13, 16, 19)
+        if not m_arch in vgg_archs:
+            raise ValueError(
+                f"Invalid VGG architecture. Architecture must be one of {vgg_archs}")
 
-    model.compile(opt_fn(learning_rate), 'mse')
-    model.fit(ds_train,
-              epochs=epochs)
+        return vgg(m_arch)
 
-if __name__=='__main__':
-  parser = argparse.ArgumentParser(description='Train a net on MNIST.')
-  parser.add_argument('model_type', type=str)
-  parser.add_argument('model_arch', type=int)
-  parser.add_argument('--batch_size', type=int, default=128)
-  parser.add_argument('--epochs', type=int, default=50)
-  parser.add_argument('--learning_rate', type=float, default=0.01)
+    raise ValueError(f"Model type {m_type} is invalid.")
 
-  args = parser.parse_args()
 
-  model_type = args.model_type
-  model_arch = args.model_arch
-  model_fn = partial(create_model, model_type, model_arch)
+def opt_fn(learning_rate: float):
+    """Generates a Stochastic Gradient Descent optimiser.
 
-  batch_size = args.batch_size
-  dataset_fn = partial(create_dataset, batch_size)
+    Args:
+        learning_rate (float): The learning rate for gradient updates.
 
-  num_epochs = args.epochs
-  learning_rate = args.learning_rate
+    Returns:
+        tf.keras.optimizers.SGD: A Keras SGD optimiser.
+    """
+    return tf.keras.optimizers.SGD(learning_rate)
 
-  train_model(model_fn,
-              dataset_fn,
-              epochs=num_epochs,
-              learning_rate=learning_rate)
+
+def train_model(model_fn: typing.Callable,
+                data_fn: typing.Callable,
+                epochs: int,
+                learning_rate: float):
+    """_summary_
+
+    Args:
+        model_fn (typing.Callable): _description_
+        data_fn (typing.Callable): _description_
+        epochs (int): _description_
+        learning_rate (float): _description_
+    """
+    mirrored_strategy = tf.distribute.MirroredStrategy()
+    with mirrored_strategy.scope():
+        ds_train, ds_test = data_fn()
+        model = model_fn()
+
+        model.compile(opt_fn(learning_rate), 'mse')
+        model.fit(ds_train,
+                  epochs=epochs)
+
+        model.eval(ds_test)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Train a net on MNIST.')
+    parser.add_argument('model_type', type=str)
+    parser.add_argument('model_arch', type=int)
+    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--learning_rate', type=float, default=0.01)
+
+    args = parser.parse_args()
+
+    model_type = args.model_type
+    model_arch = args.model_arch
+    model_func = partial(create_model, model_type, model_arch)
+
+    bs = args.batch_size
+    if bs <= 0:
+        raise ValueError("A nonzero, nonnegative batch size is required.")
+
+    dataset_fn = partial(create_dataset, bs)
+
+    num_epochs = args.epochs
+
+    lr = args.learning_rate
+    if lr <= 0:
+        raise ValueError("A nonzero, nonnegative leanring rate is required.")
+
+    train_model(model_func,
+                dataset_fn,
+                epochs=num_epochs,
+                learning_rate=lr)
