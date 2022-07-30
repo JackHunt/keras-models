@@ -47,19 +47,29 @@ from models_lib.models.vgg import vgg
 
 
 def create_dataset(batch_size: int = 16,
-                   dtype: tf.DType = tf.float32):
+                   dtype: tf.DType = tf.float32,
+                   target_shape: typing.Tuple[int, int] = None):
     """Creates two MNIST datasets, one for training and one
     for testing.
 
     Args:
         batch_size (int, optional): The batch size for the dataset. Defaults to 16.
         dtype (tf.DType, optional): The dtype of the output data. Defaults to tf.float32.
+        target_shape (tuple, optional): Shape to which the images should be reshaped.
     """
+    target_shape = tf.convert_to_tensor(target_shape) if target_shape else None
+
     def data_pipeline(ds: tf.data.Dataset,
                       training: bool = True):
         f = lambda x, t: (tf.cast(x, dtype) / 255., t)
 
-        ds = ds_train.map(f, num_parallel_calls=tf.data.AUTOTUNE)
+        g = lambda x, t: (x, t)
+        if not target_shape is None:
+            g = lambda x, t: (tf.image.resize(
+                x, target_shape, method=tf.image.ResizeMethod.BICUBIC), t)
+
+        ds = ds.map(f, num_parallel_calls=tf.data.AUTOTUNE)
+        ds = ds.map(g, num_parallel_calls=tf.data.AUTOTUNE)
         ds = ds.cache()
 
         if training:
@@ -78,7 +88,7 @@ def create_dataset(batch_size: int = 16,
         with_info=True
     )
 
-    return data_pipeline(ds_train), data_pipeline(ds_test, False)
+    return data_pipeline(ds_train), data_pipeline(ds_test, training=False)
 
 
 def create_model(m_type: str, m_arch: int) -> tf.keras.Model:
@@ -123,7 +133,7 @@ def opt_fn(learning_rate: float):
     Returns:
         tf.keras.optimizers.SGD: A Keras SGD optimiser.
     """
-    return tf.keras.optimizers.SGD(learning_rate)
+    return tf.keras.optimizers.Adam(learning_rate)
 
 
 def train_model(model_fn: typing.Callable,
@@ -168,7 +178,7 @@ if __name__ == '__main__':
     if bs <= 0:
         raise ValueError("A nonzero, nonnegative batch size is required.")
 
-    dataset_fn = partial(create_dataset, bs)
+    dataset_fn = partial(create_dataset, bs, tf.float16, (48, 48))
 
     num_epochs = args.epochs
 
