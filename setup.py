@@ -36,5 +36,8 @@ from setuptools import setup
 setup(name='models_lib',
       version='0.1',
       packages=[
-            'models_lib'
+            'models_lib',
+            'models_lib.layers',
+            'models_lib.layers.utils',
+            'models_lib.models'
       ])
