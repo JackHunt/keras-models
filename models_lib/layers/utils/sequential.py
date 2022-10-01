@@ -28,7 +28,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from tensorflow import keras
+import keras
 
 class SequentialLayer(keras.layers.Layer):
   """This class provides a layer that serves to encapsulate a collection

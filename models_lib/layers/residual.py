@@ -28,7 +28,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from tensorflow import keras
+from multiprocessing.sharedctypes import Value
+import keras
 from models_lib.layers.utils import sequential
 
 class ResidualBlock(keras.layers.Layer):
@@ -45,25 +46,30 @@ class ResidualBlock(keras.layers.Layer):
   Arguments:
     kernel_size: The size of the 2D convolution kernels.
     num_filters: The number of filters to use in the first two convolutions.
-    num_downsample_filters: The number of filters to use in the third,
+    shortcut_conv_depth: The number of filters to use in the third,
       downsampling convolution. Defaults to 0, disabling downsampling.
     kernel_size_b: An optional kernel size for the second convolution, should
       it need to differ from the first.
   """
   def __init__(self, kernel_size, num_filters,
-               num_downsample_filters=0, kernel_size_b=None):
+               shortcut_conv_depth=0, kernel_size_b=None):
     super().__init__()
 
+    if isinstance(kernel_size, int):
+      kernel_size = (kernel_size, kernel_size)
     self._kernel_size = kernel_size
-    if self.kernel_size < 1:
+    if self.kernel_size[0] < 1 or self.kernel_size[1] < 1:
       raise ValueError(
-        "ResidualBlock kernel_size must be greater than or equal to one.")
+        "ResidualBlock kernel_size must be greater than or equal to one in each dimension.")
 
     self._kernel_size_b = kernel_size_b
+    if self.kernel_size_b is not None and isinstance(self.kernel_size_b, int):
+      self._kernel_size_b = (self.kernel_size_b, self.kernel_size_b)
+    
     if self.kernel_size_b:
-      if self._kernel_size_b < 1:
+      if self.kernel_size_b[0] < 1 or self.kernel_size_b[1] < 1:
         raise ValueError(
-          "ResidualBlock kernel_size_b must be greater than or equal to one.")
+          "ResidualBlock kernel_size_b must be greater than or equal to one in each dimension.")
     else:
       self._kernel_size_b = self.kernel_size
 
@@ -72,8 +78,8 @@ class ResidualBlock(keras.layers.Layer):
       raise ValueError(
         "ResidualBlock num_filters must be greater than or equal to one.")
 
-    self._num_downsample_filters = num_downsample_filters
-    self._downsampling = self.num_downsample_filters > 0
+    self._shortcut_conv_depth = shortcut_conv_depth
+    self._downsampling = self.shortcut_conv_depth > 0
 
     self._conv = sequential.SequentialLayer(
       [
@@ -93,7 +99,7 @@ class ResidualBlock(keras.layers.Layer):
     if self.downsampling:
       self._ds = keras.layers.Conv2D(kernel_size=1,
                                      strides=2,
-                                     filters=self.num_downsample_filters,
+                                     filters=self.shortcut_conv_depth,
                                      padding='same',
                                      activation='relu')
 
@@ -101,11 +107,12 @@ class ResidualBlock(keras.layers.Layer):
 
   def call(self, inputs):
     y = self._conv(inputs)
-    
+
+    residual = inputs
     if self.downsampling:
-      inputs = self._ds(inputs)
+      residual = self._ds(residual)
     
-    y = keras.layers.Add()([y, inputs])
+    y = keras.layers.Add()([y, residual])
     y = keras.layers.ReLU()(y)
     return self._bn(y)
 
@@ -114,7 +121,7 @@ class ResidualBlock(keras.layers.Layer):
     config.update({
       'kernel_size': self._kernel_size,
       'num_filters': self._num_filters,
-      'num_downsample_filters': self._num_downsample_filters,
+      'shortcut_conv_depth': self._shortcut_conv_depth,
       'kernel_size_b': self._kernel_size_b,
     })
     return config
@@ -140,5 +147,5 @@ class ResidualBlock(keras.layers.Layer):
     return self._downsampling
 
   @property
-  def num_downsample_filters(self):
-    return self._num_downsample_filters
+  def shortcut_conv_depth(self):
+    return self._shortcut_conv_depth

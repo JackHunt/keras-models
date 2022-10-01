@@ -28,7 +28,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from tensorflow import keras
+import keras
 from models_lib.layers.vgg import VGGBlock, VGGClassifier
 from models_lib.layers.utils.sequential import SequentialLayer
 

@@ -28,7 +28,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Trains and tests a CNN model on the MNIST digits dataset.
+"""Trains and tests a CNN model on the CIFAR100 dataset.
 
 Raises:
     ValueError: If an invalid batch size is provided.
@@ -38,6 +38,8 @@ Raises:
 import argparse
 import typing
 from functools import partial
+
+import keras
 
 import tensorflow_datasets as tfds
 import tensorflow as tf
@@ -49,7 +51,7 @@ from models_lib.models.vgg import vgg
 def create_dataset(batch_size: int = 16,
                    dtype: tf.DType = tf.float32,
                    target_shape: typing.Tuple[int, int] = None):
-    """Creates two MNIST datasets, one for training and one
+    """Creates two CIFAR100 datasets, one for training and one
     for testing.
 
     Args:
@@ -81,7 +83,7 @@ def create_dataset(batch_size: int = 16,
         return ds
 
     (ds_train, ds_test), ds_info = tfds.load(
-        'mnist',
+        'cifar100',
         split=['train', 'test'],
         shuffle_files=True,
         as_supervised=True,
@@ -91,7 +93,7 @@ def create_dataset(batch_size: int = 16,
     return data_pipeline(ds_train), data_pipeline(ds_test, training=False)
 
 
-def create_model(m_type: str, m_arch: int) -> tf.keras.Model:
+def create_model(m_type: str, m_arch: int, num_classes: int = 10) -> tf.keras.Model:
     """_summary_
 
     Args:
@@ -110,7 +112,12 @@ def create_model(m_type: str, m_arch: int) -> tf.keras.Model:
         if not m_arch in resnet_archs:
             raise ValueError(
                 f"Invalid Resnet architecture. Architecture must be one of {resnet_archs}")
-
+        if num_classes > 0:
+            return keras.Sequential([
+                resnet(m_arch),
+                keras.layers.Flatten(),
+                keras.layers.Dense(num_classes)
+            ])
         return resnet(m_arch)
 
     if m_type in ('vgg', 'VGG'):
@@ -119,7 +126,7 @@ def create_model(m_type: str, m_arch: int) -> tf.keras.Model:
             raise ValueError(
                 f"Invalid VGG architecture. Architecture must be one of {vgg_archs}")
 
-        return vgg(m_arch)
+        return vgg(m_arch, num_classes=num_classes)
 
     raise ValueError(f"Model type {m_type} is invalid.")
 
@@ -161,7 +168,7 @@ def train_model(model_fn: typing.Callable,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train a net on MNIST.')
+    parser = argparse.ArgumentParser(description='Train a net on CIFAR100.')
     parser.add_argument('model_type', type=str)
     parser.add_argument('model_arch', type=int)
     parser.add_argument('--batch_size', type=int, default=128)
@@ -184,7 +191,7 @@ if __name__ == '__main__':
 
     lr = args.learning_rate
     if lr <= 0:
-        raise ValueError("A nonzero, nonnegative leanring rate is required.")
+        raise ValueError("A nonzero, nonnegative learning rate is required.")
 
     train_model(model_func,
                 dataset_fn,
