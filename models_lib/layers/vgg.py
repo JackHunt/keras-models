@@ -30,99 +30,100 @@
 
 import keras
 from models_lib.layers.utils.sequential import SequentialLayer
+
 class VGGBlock(SequentialLayer):
-  """This class implements the "VGG Block" component of the VGG-x
-  family of CNN architectures. Each `VGGBlock` consists of the
-  following components (executed in the given order).
+    """This class implements the "VGG Block" component of the VGG-x
+    family of CNN architectures. Each `VGGBlock` consists of the
+    following components (executed in the given order).
 
-  - A number of 2D Convolutions
-  - 2D Max Pooling
+    - A number of 2D Convolutions
+    - 2D Max Pooling
 
-  Arguments:
-    num_convolutions: The number of convolution kernels.
-    num_filters: The number of filters to use in the convolutions.
-  """
-  def __init__(self, num_convolutions, num_filters):
-    self._num_convolutions = num_convolutions
-    if self.num_convolutions <= 0:
-      raise ValueError(
-        "VGGBlock must have a positive, nonzero convolution count.")
+    Arguments:
+        num_convolutions: The number of convolution kernels.
+        num_filters: The number of filters to use in the convolutions.
+    """
+    def __init__(self, num_convolutions, num_filters):
+        self._num_convolutions = num_convolutions
+        if self.num_convolutions <= 0:
+            raise ValueError(
+                "VGGBlock must have a positive, nonzero convolution count.")
 
-    self._num_filters = num_filters
-    if self.num_filters < 1:
-      raise ValueError(
-        "VGGBlock convolutions must have at least one channel.")
+        self._num_filters = num_filters
+        if self.num_filters < 1:
+            raise ValueError(
+                "VGGBlock convolutions must have at least one channel.")
 
-    layers = []
-    for _ in range(self.num_convolutions):
-      layers.append(keras.layers.Conv2D(filters=self.num_filters,
-                                        kernel_size=3,
-                                        padding='same',
-                                        activation='relu'))
+        layers = []
+        for _ in range(self.num_convolutions):
+            layers.append(keras.layers.Conv2D(filters=self.num_filters,
+                                              kernel_size=3,
+                                              padding='same',
+                                              activation='relu'))
     
-    layers.append(keras.layers.MaxPool2D(pool_size=2, strides=2))
+        layers.append(keras.layers.MaxPool2D(pool_size=2, strides=2))
 
-    super().__init__(layers)
+        super().__init__(layers)
 
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-      'num_convolutions': self._num_convolutions,
-      'num_filters': self._num_filters
-    })
-    return config
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'num_convolutions': self._num_convolutions,
+            'num_filters': self._num_filters
+        })
+        return config
 
-  @classmethod
-  def from_config(cls, config):
-    return VGGBlock(**config)
+    @classmethod
+    def from_config(cls, config):
+        return VGGBlock(**config)
 
-  @property
-  def num_convolutions(self):
-    return self._num_convolutions
+    @property
+    def num_convolutions(self):
+        return self._num_convolutions
 
-  @property
-  def num_filters(self):
-    return self._num_filters
+    @property
+    def num_filters(self):
+        return self._num_filters
 
 class VGGClassifier(SequentialLayer):
-  """This class implements the "VGG Classifier" component of the VGG-x
-  family of CNN architectures. Each `VGGClassifier` consists of the 
-  following components (executed in the given order).
+    """This class implements the "VGG Classifier" component of the VGG-x
+    family of CNN architectures. Each `VGGClassifier` consists of the 
+    following components (executed in the given order).
 
-  - A Flatten Layer
-  - A Dense layer of 4096 units and relu activation
-  - A Dense layer of 4096 units and relu activation
-  - A Dense layer of `num_classes` units and softmax activation.
+    - A Flatten Layer
+    - A Dense layer of 4096 units and relu activation
+    - A Dense layer of 4096 units and relu activation
+    - A Dense layer of `num_classes` units and softmax activation.
 
-  Arguments:
-    num_classes: The number of output classes.
-  """
-  def __init__(self, num_classes):
-    if num_classes < 0:
-      raise ValueError("VGGClassifier num_classes must be nonnegative.")
+    Arguments:
+        num_classes: The number of output classes.
+    """
+    def __init__(self, num_classes):
+        if num_classes < 0:
+            raise ValueError("VGGClassifier num_classes must be nonnegative.")
 
-    self._num_classes = num_classes
+        self._num_classes = num_classes
 
-    layers = [
-      keras.layers.Flatten(),
-      keras.layers.Dense(4096, activation='relu'),
-      keras.layers.Dense(4096, activation='relu'),
-      keras.layers.Dense(self.num_classes, activation='softmax')
-    ]
+        layers = [
+            keras.layers.Flatten(),
+            keras.layers.Dense(4096, activation='relu'),
+            keras.layers.Dense(4096, activation='relu'),
+            keras.layers.Dense(self.num_classes, activation='softmax')
+        ]
 
-    super().__init__(layers)
+        super().__init__(layers)
 
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-      'num_classes': self.num_classes
-    })
-    return config
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'num_classes': self.num_classes
+        })
+        return config
 
-  @classmethod
-  def from_config(cls, config):
-    return VGGClassifier(**config)
+    @classmethod
+    def from_config(cls, config):
+        return VGGClassifier(**config)
 
-  @property
-  def num_classes(self):
-    return self._num_classes
+    @property
+    def num_classes(self):
+        return self._num_classes

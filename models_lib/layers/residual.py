@@ -28,124 +28,128 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from multiprocessing.sharedctypes import Value
+import typing
+
+import tensorflow as tf
 import keras
 from models_lib.layers.utils import sequential
 
 class ResidualBlock(keras.layers.Layer):
-  """This class implements the "Residual Block" component of the ResNet
-  family of CNN architectures. Each `ResidualBlock` consists of the 
-  following components (executed in the given order).
+    """This class implements the "Residual Block" component of the ResNet
+    family of CNN architectures. Each `ResidualBlock` consists of the 
+    following components (executed in the given order).
 
-  - 2D Convolution
-  - Batch Normalization
-  - 2D Convolution (stride 1)
-  - Optional 2D Convolution (kernel size 1, stride 2, for downsampling)
-  - Batch Normalization
+    - 2D Convolution
+    - Batch Normalization
+    - 2D Convolution (stride 1)
+    - Optional 2D Convolution (kernel size 1, stride 2, for downsampling)
+    - Batch Normalization
 
-  Arguments:
-    kernel_size: The size of the 2D convolution kernels.
-    num_filters: The number of filters to use in the first two convolutions.
-    shortcut_conv_depth: The number of filters to use in the third,
-      downsampling convolution. Defaults to 0, disabling downsampling.
-    kernel_size_b: An optional kernel size for the second convolution, should
-      it need to differ from the first.
-  """
-  def __init__(self, kernel_size, num_filters,
-               shortcut_conv_depth=0, kernel_size_b=None):
-    super().__init__()
+    Arguments:
+        kernel_size: The size of the 2D convolution kernels.
+        num_filters: The number of filters to use in the first two convolutions.
+        shortcut_conv_depth: The number of filters to use in the third,
+            downsampling convolution. Defaults to 0, disabling downsampling.
+        kernel_size_b: An optional kernel size for the second convolution, should
+            it need to differ from the first.
+    """
+    def __init__(self,
+                 kernel_size: typing.Union[int, typing.Tuple[int, int]],
+                 num_filters: int,
+                 shortcut_conv_depth: int = 0,
+                 kernel_size_b: int = None):
+        super().__init__()
 
-    if isinstance(kernel_size, int):
-      kernel_size = (kernel_size, kernel_size)
-    self._kernel_size = kernel_size
-    if self.kernel_size[0] < 1 or self.kernel_size[1] < 1:
-      raise ValueError(
-        "ResidualBlock kernel_size must be greater than or equal to one in each dimension.")
+        if isinstance(kernel_size, int):
+            kernel_size = (kernel_size, kernel_size)
+        self._kernel_size = kernel_size
+        if self.kernel_size[0] < 1 or self.kernel_size[1] < 1:
+            raise ValueError(
+                "ResidualBlock kernel_size must be greater than or equal to one in each dimension.")
 
-    self._kernel_size_b = kernel_size_b
-    if self.kernel_size_b is not None and isinstance(self.kernel_size_b, int):
-      self._kernel_size_b = (self.kernel_size_b, self.kernel_size_b)
+        self._kernel_size_b = kernel_size_b
+        if self.kernel_size_b is not None and isinstance(self.kernel_size_b, int):
+            self._kernel_size_b = (self.kernel_size_b, self.kernel_size_b)
     
-    if self.kernel_size_b:
-      if self.kernel_size_b[0] < 1 or self.kernel_size_b[1] < 1:
-        raise ValueError(
-          "ResidualBlock kernel_size_b must be greater than or equal to one in each dimension.")
-    else:
-      self._kernel_size_b = self.kernel_size
+        if self.kernel_size_b:
+            if self.kernel_size_b[0] < 1 or self.kernel_size_b[1] < 1:
+                raise ValueError(
+                    "ResidualBlock kernel_size_b must be greater than or equal to one in each dimension.")
+        else:
+            self._kernel_size_b = self.kernel_size
 
-    self._num_filters = num_filters
-    if self._num_filters < 1:
-      raise ValueError(
-        "ResidualBlock num_filters must be greater than or equal to one.")
+        self._num_filters = num_filters
+        if self._num_filters < 1:
+            raise ValueError(
+                "ResidualBlock num_filters must be greater than or equal to one.")
 
-    self._shortcut_conv_depth = shortcut_conv_depth
-    self._downsampling = self.shortcut_conv_depth > 0
+        self._shortcut_conv_depth = shortcut_conv_depth
+        self._downsampling = self.shortcut_conv_depth > 0
 
-    self._conv = sequential.SequentialLayer(
-      [
-        keras.layers.Conv2D(kernel_size=self.kernel_size,
-                            strides=(2, 2) if self.downsampling else (1, 1),
-                            filters=self.num_filters,
-                            padding='same',
-                            activation='relu'),
-        keras.layers.BatchNormalization(),
-        keras.layers.Conv2D(kernel_size=self.kernel_size_b,
-                            strides=(1, 1),
-                            filters=self.num_filters,
-                            padding='same',
-                            activation='relu')
-      ])
+        self._conv = sequential.SequentialLayer([
+            keras.layers.Conv2D(kernel_size=self.kernel_size,
+                                strides=(2, 2) if self.downsampling else (1, 1),
+                                filters=self.num_filters,
+                                padding='same',
+                                activation='relu'),
+            keras.layers.BatchNormalization(),
+            keras.layers.Conv2D(kernel_size=self.kernel_size_b,
+                                strides=(1, 1),
+                                filters=self.num_filters,
+                                padding='same',
+                                activation='relu')
+        ])
 
-    if self.downsampling:
-      self._ds = keras.layers.Conv2D(kernel_size=1,
-                                     strides=2,
-                                     filters=self.shortcut_conv_depth,
-                                     padding='same',
-                                     activation='relu')
+        if self.downsampling:
+            self._ds = keras.layers.Conv2D(kernel_size=1,
+                                           strides=2,
+                                           filters=self.shortcut_conv_depth,
+                                           padding='same',
+                                           activation='relu')
 
-    self._bn = keras.layers.BatchNormalization()
+        self._bn = keras.layers.BatchNormalization()
 
-  def call(self, inputs):
-    y = self._conv(inputs)
+    def call(self, inputs):
+        y = self._conv(inputs)
 
-    residual = inputs
-    if self.downsampling:
-      residual = self._ds(residual)
+        residual = inputs
+        if self.downsampling:
+            residual = self._ds(residual)
     
-    y = keras.layers.Add()([y, residual])
-    y = keras.layers.ReLU()(y)
-    return self._bn(y)
+        y = keras.layers.Add()([y, residual])
+        y = keras.layers.ReLU()(y)
+        return self._bn(y)
 
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-      'kernel_size': self._kernel_size,
-      'num_filters': self._num_filters,
-      'shortcut_conv_depth': self._shortcut_conv_depth,
-      'kernel_size_b': self._kernel_size_b,
-    })
-    return config
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'kernel_size': self._kernel_size,
+            'num_filters': self._num_filters,
+            'shortcut_conv_depth': self._shortcut_conv_depth,
+            'kernel_size_b': self._kernel_size_b,
+        })
+        return config
 
-  @classmethod
-  def from_config(cls, config):
-    return ResidualBlock(**config)
+    @classmethod
+    def from_config(cls, config):
+        return ResidualBlock(**config)
 
-  @property
-  def kernel_size(self):
-    return self._kernel_size
+    @property
+    def kernel_size(self):
+        return self._kernel_size
 
-  @property
-  def kernel_size_b(self):
-    return self._kernel_size_b
+    @property
+    def kernel_size_b(self):
+        return self._kernel_size_b
 
-  @property
-  def num_filters(self):
-    return self._num_filters
+    @property
+    def num_filters(self):
+        return self._num_filters
 
-  @property
-  def downsampling(self):
-    return self._downsampling
+    @property
+    def downsampling(self):
+        return self._downsampling
 
-  @property
-  def shortcut_conv_depth(self):
-    return self._shortcut_conv_depth
+    @property
+    def shortcut_conv_depth(self):
+        return self._shortcut_conv_depth

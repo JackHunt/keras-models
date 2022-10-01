@@ -28,47 +28,49 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import typing
+
 import keras
 
 class SequentialLayer(keras.layers.Layer):
-  """This class provides a layer that serves to encapsulate a collection
-  of layers to be executed in a sequential manner. This class provides
-  a single-input, single-output "block" of constituent layers, for which
-  the input to layer `n+1` is the output of layer `n`.
+    """This class provides a layer that serves to encapsulate a collection
+    of layers to be executed in a sequential manner. This class provides
+    a single-input, single-output "block" of constituent layers, for which
+    the input to layer `n+1` is the output of layer `n`.
 
-  Arguments:
-    layers: A list of layers to be executed in sequence.
-  """
-  def __init__(self, layers):
-    super().__init__()
+    Arguments:
+        layers: A list of layers to be executed in sequence.
+    """
+    def __init__(self, layers: typing.Iterable[keras.layers.Layer]):
+        super().__init__()
 
-    if not layers:
-      raise ValueError("No layers provided.")
+        if not layers:
+            raise ValueError("No layers provided.")
 
-    self._layers = layers
+        self._layers = layers
 
-  def call(self, inputs):
-    if not (self._layers and self.built):
-      raise RuntimeError("Layer has not been built.")
+    def call(self, inputs):
+        if not (self._layers and self.built):
+            raise RuntimeError("Layer has not been built.")
 
-    x = inputs
-    y = None
-    for l in self._layers:
-      y = l(x)
-      x = y
-    return y
+        x = inputs
+        y = None
+        for l in self._layers:
+            y = l(x)
+            x = y
+        return y
 
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-      'layers': self._layers
-    })
-    return config
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'layers': self._layers
+        })
+        return config
 
-  @classmethod
-  def from_config(cls, config):
-    return SequentialLayer(**config)
+    @classmethod
+    def from_config(cls, config):
+        return SequentialLayer(**config)
 
-  @property
-  def layers(self):
-    return self._layers
+    @property
+    def layers(self):
+        return self._layers
