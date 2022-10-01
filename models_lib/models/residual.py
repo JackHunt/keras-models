@@ -73,7 +73,8 @@ class _ResNet(keras.Model):
   def get_config(self):
     config = super().get_config()
     config.update({
-      'arch': self.arch
+      'residual_blocks': self.residual_blocks,
+      'num_classes': self.num_classes
     })
     return config
 
