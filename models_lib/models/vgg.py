@@ -33,10 +33,14 @@ from models_lib.layers.vgg import VGGBlock, VGGClassifier
 from models_lib.layers.utils.sequential import SequentialLayer
 
 class _VGGNet(keras.Model):
-  def __init__(self, arch, num_classes=0, **kwargs):
+  def __init__(self, vgg_blocks, num_classes=0, **kwargs):
     super().__init__(**kwargs)
 
-    self._vgg_blocks = SequentialLayer([VGGBlock(*nd) for nd in arch])
+    for b in vgg_blocks:
+      if not isinstance(b, VGGBlock):
+        raise ValueError("Non VGGBlock found.")
+
+    self._vgg_blocks = SequentialLayer(vgg_blocks)
 
     self._classifier_block = None
     if num_classes > 0:
@@ -51,7 +55,7 @@ class _VGGNet(keras.Model):
   def get_config(self):
     config = super().get_config()
     config.update({
-      'arch': self.arch,
+      'vgg_blocks': self.vgg_blocks,
       'num_classes': self.classifier_block.num_classes
     })
     return config
@@ -66,15 +70,15 @@ class _VGGNet(keras.Model):
 
 class VGG11(_VGGNet):
   def __init__(self, **kwargs):
-    arch = [
-      (1, 64),
-      (1, 128),
-      (2, 256),
-      (2, 512),
-      (2, 512)
+    blocks = [
+      VGGBlock(1, 64),
+      VGGBlock(1, 128),
+      VGGBlock(2, 256),
+      VGGBlock(2, 512),
+      VGGBlock(2, 512)
     ]
 
-    super().__init__(arch, **kwargs)
+    super().__init__(blocks, **kwargs)
 
   @classmethod
   def from_config(cls, config):
@@ -82,15 +86,15 @@ class VGG11(_VGGNet):
 
 class VGG13(_VGGNet):
   def __init__(self, **kwargs):
-    arch = [
-      (2, 64),
-      (2, 128),
-      (2, 256),
-      (2, 512),
-      (2, 512)
+    blocks = [
+      VGGBlock(2, 64),
+      VGGBlock(2, 128),
+      VGGBlock(2, 256),
+      VGGBlock(2, 512),
+      VGGBlock(2, 512)
     ]
 
-    super().__init__(arch, **kwargs)
+    super().__init__(blocks, **kwargs)
 
   @classmethod
   def from_config(cls, config):
@@ -98,15 +102,15 @@ class VGG13(_VGGNet):
 
 class VGG16(_VGGNet):
   def __init__(self, **kwargs):
-    arch = [
-      (2, 64),
-      (2, 128),
-      (3, 256),
-      (3, 512),
-      (3, 512)
+    blocks = [
+      VGGBlock(2, 64),
+      VGGBlock(2, 128),
+      VGGBlock(3, 256),
+      VGGBlock(3, 512),
+      VGGBlock(3, 512)
     ]
 
-    super().__init__(arch, **kwargs)
+    super().__init__(blocks, **kwargs)
 
   @classmethod
   def from_config(cls, config):
@@ -114,15 +118,15 @@ class VGG16(_VGGNet):
 
 class VGG19(_VGGNet):
   def __init__(self, **kwargs):
-    arch = [
-      (2, 64),
-      (2, 128),
-      (4, 256),
-      (4, 512),
-      (4, 512)
+    blocks = [
+      VGGBlock(2, 64),
+      VGGBlock(2, 128),
+      VGGBlock(4, 256),
+      VGGBlock(4, 512),
+      VGGBlock(4, 512)
     ]
 
-    super().__init__(arch, **kwargs)
+    super().__init__(blocks, **kwargs)
 
   @classmethod
   def from_config(cls, config):
