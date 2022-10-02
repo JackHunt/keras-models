@@ -28,12 +28,33 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import typing
+
 import keras
 from models_lib.layers.vgg import VGGBlock, VGGClassifier
 from models_lib.layers.utils.sequential import SequentialLayer
 
 class _VGGNet(keras.Model):
-    def __init__(self, vgg_blocks, num_classes=0, **kwargs):
+    """Base class for VGG type CNN models, with an optional classifier.
+    """
+    def __init__(self,
+                 vgg_blocks: typing.List[VGGBlock],
+                 num_classes: int = 0,
+                 **kwargs):
+        """Instantiates a new VGG model with the `VGGBlock` instances
+        provided in `vgg_blocks`.
+
+        Args:
+            vgg_blocks (typing.List[VGGBlock]): The `VGGBlock`
+            instances that make up the core of the network.
+
+            num_classes (int, optional): Number of classes for which the
+            model is to perform classification over.
+            Defaults to 0.
+
+        Raises:
+            ValueError: _description_
+        """
         super().__init__(**kwargs)
 
         for b in vgg_blocks:
@@ -61,11 +82,11 @@ class _VGGNet(keras.Model):
         return config
 
     @property
-    def vgg_blocks(self):
+    def vgg_blocks(self) -> SequentialLayer:
         return self._vgg_blocks
 
     @property
-    def classifier_block(self):
+    def classifier_block(self) -> VGGClassifier:
         return self._classifier_block
 
 class VGG11(_VGGNet):
