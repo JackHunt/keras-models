@@ -73,9 +73,9 @@ class MLP(keras.Model):
                 raise ValueError(
                     "All hidden layer sizes must be greater than or equal to one.")
 
-        self._hidden = SequentialLayer(
-            [keras.layers.Dense(
-                n, activation=self.hidden_activation) for n in self.hidden_sizes])
+            self._hidden = SequentialLayer(
+                [keras.layers.Dense(
+                    n, activation=self.hidden_activation) for n in self.hidden_sizes])
         else:
             self._hidden = None
 
