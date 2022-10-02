@@ -30,6 +30,110 @@
 
 import keras
 
+import tensorflow as tf
+
+from models_lib.layers.utils.sequential import SequentialLayer
+
 class InceptionBlock(keras.layers.Layer):
-    def __init__(self):
-        pass
+    def __init__(self,
+                 num_filters_1x1: int,
+                 num_filters_3x3: int,
+                 num_filters_5x5: int,
+                 num_filters_1x1_dim_reduce: int = 0,
+                 num_filters_3x3_dim_reduce: int = 0,
+                 num_filters_5x5_dim_reduce: int = 0,
+                 max_pool: bool = False,
+                 num_filters_max_pool_dim_reduce: int = 0):
+        self._n_1x1 = num_filters_1x1
+        self._n_3x3 = num_filters_3x3
+        self._n_5x5 = num_filters_5x5
+        self._n_1x1_r = num_filters_1x1_dim_reduce
+        self._n_3x3_r = num_filters_3x3_dim_reduce
+        self._n_5x5_r = num_filters_5x5_dim_reduce
+        self._use_mp = max_pool
+        self._n_mp_filters = num_filters_max_pool_dim_reduce
+
+        # 1x1 conv.
+        branch_0_layers = []
+        if num_filters_1x1_dim_reduce:
+            branch_0_layers.append()
+        branch_0_layers.append()
+        self._branch_0 = SequentialLayer(branch_0_layers)
+
+        # 3x3 conv.
+        branch_1_layers = []
+        if num_filters_3x3_dim_reduce:
+            branch_1_layers.append()
+        branch_1_layers.append()
+        self._branch_1 = SequentialLayer(branch_1_layers)
+
+        # 5x5 conv.
+        branch_2_layers = []
+        if num_filters_5x5_dim_reduce:
+            branch_2_layers.append()
+        branch_2_layers.append()
+        self._branch_2 = SequentialLayer(branch_2_layers)
+
+        # Max Pool & 1x1 branch.
+        self._branch_3 = None
+        if self.max_pool:
+            branch_3_layers = [
+                #
+            ]
+            self._branch_3 = SequentialLayer(branch_3_layers)
+
+
+    def call(self, inputs):
+        b0_out = self._branch_0(inputs)
+        b1_out = self._branch_1(inputs)
+        b2_out = self._branch_2(inputs)
+
+        b3_out = []
+        if self.max_pool:
+            b3_out = self._branch_3(inputs)
+
+        return tf.concat(b0_out, b1_out, b2_out, b3_out)
+
+    @property
+    def num_filters_1x1(self) -> int:
+        return self._n_1x1
+
+    @property
+    def num_filters_1x1_dim_reduce(self) -> int:
+        return self._n_1x1_r
+
+    @property
+    def num_filters_3x3(self) -> int:
+        return self._n_3x3
+
+    @property
+    def num_filters_3x3_dim_reduce(self) -> int:
+        return self._n_3x3_r
+
+    @property
+    def num_filters_5x5(self) -> int:
+        return self._n_5x5
+
+    @property
+    def num_filters_5x5_dim_reduce(self) -> int:
+        return self._n_5x5_r
+
+    @property
+    def max_pool(self) -> bool:
+        return self._use_mp
+
+    @property
+    def num_filters_max_pool_dim_reduce(self) -> int:
+        return self._n_mp_filters
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'num_filters_1x1': self.num_filters_1x1,
+            'num_filters_3x3': self.num_filters_3x3,
+            'num_filters_5x5': self.num_filters_5x5,
+            'num_filters_1x1_dim_reduce': self.num_filters_1x1_dim_reduce,
+            'num_filters_3x3_dim_reduce': self.num_filters_3x3_dim_reduce,
+            'num_filters_5x5_dim_reduce': self.num_filters_5x5_dim_reduce
+        })
+        return config

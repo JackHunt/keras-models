@@ -99,7 +99,7 @@ class _ResNet(keras.Model):
                 keras.layers.Dense(num_classes, activation='softmax'),
         ])
 
-    def call(self, inputs, training, mask):
+    def call(self, inputs):
         y = self.initial_block(inputs)
         y = self.residual_blocks(y)
 
