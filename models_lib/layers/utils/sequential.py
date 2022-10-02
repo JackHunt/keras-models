@@ -37,11 +37,17 @@ class SequentialLayer(keras.layers.Layer):
     of layers to be executed in a sequential manner. This class provides
     a single-input, single-output "block" of constituent layers, for which
     the input to layer `n+1` is the output of layer `n`.
-
-    Arguments:
-        layers: A list of layers to be executed in sequence.
     """
     def __init__(self, layers: typing.List[keras.layers.Layer]):
+        """Constructs a `SequentialLayer` to execute the given
+        list of layers in order.
+
+        Args:
+            layers (typing.List[keras.layers.Layer]): The layers to encapsulate.
+
+        Raises:
+            ValueError: If no layers are provided.
+        """
         super().__init__()
 
         if not layers:
@@ -72,5 +78,5 @@ class SequentialLayer(keras.layers.Layer):
         return SequentialLayer(**config)
 
     @property
-    def layers(self):
+    def layers(self) -> typing.List[keras.layers.Layer]:
         return self._layers
