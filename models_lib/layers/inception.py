@@ -39,49 +39,60 @@ class InceptionBlock(keras.layers.Layer):
                  num_filters_1x1: int,
                  num_filters_3x3: int,
                  num_filters_5x5: int,
-                 num_filters_1x1_dim_reduce: int = 0,
                  num_filters_3x3_dim_reduce: int = 0,
                  num_filters_5x5_dim_reduce: int = 0,
                  max_pool: bool = False,
                  num_filters_max_pool_dim_reduce: int = 0):
+        super().__init__()
+
         self._n_1x1 = num_filters_1x1
         self._n_3x3 = num_filters_3x3
         self._n_5x5 = num_filters_5x5
-        self._n_1x1_r = num_filters_1x1_dim_reduce
         self._n_3x3_r = num_filters_3x3_dim_reduce
         self._n_5x5_r = num_filters_5x5_dim_reduce
         self._use_mp = max_pool
         self._n_mp_filters = num_filters_max_pool_dim_reduce
 
         # 1x1 conv.
-        branch_0_layers = []
-        if num_filters_1x1_dim_reduce:
-            branch_0_layers.append()
-        branch_0_layers.append()
+        branch_0_layers = [
+            keras.layers.Conv2D(
+                self.num_filters_1x1, (1, 1), padding='same', activation='relu')
+        ]
         self._branch_0 = SequentialLayer(branch_0_layers)
 
         # 3x3 conv.
-        branch_1_layers = []
-        if num_filters_3x3_dim_reduce:
-            branch_1_layers.append()
-        branch_1_layers.append()
+        branch_1_layers = [
+            keras.layers.Conv2D(
+                self.num_filters_3x3, (3, 3), padding='same', activation='relu')
+        ]
+        if self.num_filters_3x3_dim_reduce:
+            branch_1_layers.insert(0, keras.layers.Conv2D(
+                self.num_filters_3x3_dim_reduce, (1, 1),
+                padding='same', activation='relu'))
         self._branch_1 = SequentialLayer(branch_1_layers)
 
         # 5x5 conv.
-        branch_2_layers = []
-        if num_filters_5x5_dim_reduce:
-            branch_2_layers.append()
-        branch_2_layers.append()
+        branch_2_layers = [
+            keras.layers.Conv2D(
+                self.num_filters_5x5, (5, 5), padding='same', activation='relu')
+        ]
+        if self.num_filters_5x5_dim_reduce:
+            branch_2_layers.insert(0, keras.layers.Conv2D(
+                self.num_filters_5x5_dim_reduce, (1, 1),
+                padding='same', activation='relu'))
         self._branch_2 = SequentialLayer(branch_2_layers)
 
         # Max Pool & 1x1 branch.
         self._branch_3 = None
         if self.max_pool:
             branch_3_layers = [
-                #
+                keras.layers.MaxPool2D((3, 3), strides=(1, 1), padding='same')
             ]
+            if self.num_filters_max_pool_dim_reduce:
+                branch_3_layers.insert(0, keras.layers.Conv2D(
+                    self.num_filters_max_pool_dim_reduce, (1, 1),
+                    padding='same', activation='relu'))
             self._branch_3 = SequentialLayer(branch_3_layers)
-
 
     def call(self, inputs):
         b0_out = self._branch_0(inputs)
@@ -94,13 +105,26 @@ class InceptionBlock(keras.layers.Layer):
 
         return tf.concat(b0_out, b1_out, b2_out, b3_out)
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'num_filters_1x1': self.num_filters_1x1,
+            'num_filters_3x3': self.num_filters_3x3,
+            'num_filters_5x5': self.num_filters_5x5,
+            'num_filters_3x3_dim_reduce': self.num_filters_3x3_dim_reduce,
+            'num_filters_5x5_dim_reduce': self.num_filters_5x5_dim_reduce,
+            'max_pool': self.max_pool,
+            'num_filters_max_pool_dim_reduce': self.num_filters_max_pool_dim_reduce
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return InceptionBlock(**config)
+
     @property
     def num_filters_1x1(self) -> int:
         return self._n_1x1
-
-    @property
-    def num_filters_1x1_dim_reduce(self) -> int:
-        return self._n_1x1_r
 
     @property
     def num_filters_3x3(self) -> int:
@@ -125,15 +149,3 @@ class InceptionBlock(keras.layers.Layer):
     @property
     def num_filters_max_pool_dim_reduce(self) -> int:
         return self._n_mp_filters
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'num_filters_1x1': self.num_filters_1x1,
-            'num_filters_3x3': self.num_filters_3x3,
-            'num_filters_5x5': self.num_filters_5x5,
-            'num_filters_1x1_dim_reduce': self.num_filters_1x1_dim_reduce,
-            'num_filters_3x3_dim_reduce': self.num_filters_3x3_dim_reduce,
-            'num_filters_5x5_dim_reduce': self.num_filters_5x5_dim_reduce
-        })
-        return config
