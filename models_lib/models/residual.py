@@ -28,16 +28,54 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import typing
+
 import keras
-from models_lib.layers import residual
-from models_lib.layers.utils import sequential
+from models_lib.layers.residual import ResidualBlock
+from models_lib.layers.utils.sequential import SequentialLayer
 
 class _ResNet(keras.Model):
-    def __init__(self, residual_blocks, num_classes: int = 0, **kwargs):
+    """Base class for ResNet models which provides an initial
+    layer and an optional output layer as pre and post user-provided
+    `ResidualBlock` operations, respectively.
+    
+    The initial block consists of:
+    
+    - A 7x7 2D Convolution of 2x2 stride and 64 filters.
+    - A 3x3 2D Max Pooling layer with 2x2 stride.
+
+    The `ResidualBlock` instances provided in `residual_blocks` are
+    then executed, followed by an output classifier block if
+    `num_classes` is specified. This classifier block consists of
+    the following:
+
+    - A 2D Average Pooling layer.
+    - A Dense layer of `num_classes` units and a Softmax activation.
+    """
+    def __init__(self,
+                 residual_blocks: typing.List[ResidualBlock],
+                 num_classes: int = 0,
+                 **kwargs):
+        """
+        Instantiates a new ResNet model with the `ResidualBlock` instances
+        provided in `residual_blocks`.
+
+        Args:
+            residual_blocks (typing.List[ResidualBlock]): The `ResidualBlock`
+            instances that make up the core of the network.
+
+            num_classes (int, optional): Number of classes for which the
+            model is to perform classification over.
+            Defaults to 0.
+
+        Raises:
+            ValueError: If `residual_blocks` contains a non `ResidualBlock`
+            instance.
+        """
         super().__init__(**kwargs)
 
         # Initial "input" block.
-        self._initial_block = sequential.SequentialLayer([
+        self._initial_block = SequentialLayer([
             keras.layers.Conv2D(kernel_size=(7, 7),
                                 strides=(2, 2),
                                 filters=64,
@@ -48,18 +86,17 @@ class _ResNet(keras.Model):
 
         # Residual layers.
         for b in residual_blocks:
-            if not isinstance(b, residual.ResidualBlock):
+            if not isinstance(b, ResidualBlock):
                 raise ValueError("Non ResidualBlock found.")
 
-        self._residual_blocks = sequential.SequentialLayer(residual_blocks)
+        self._residual_blocks = SequentialLayer(residual_blocks)
 
         # Output classifier block.
         self._output_block = None
         if num_classes > 0:
-            self._output_block = sequential.SequentialLayer([
+            self._output_block = SequentialLayer([
                 keras.layers.AveragePooling2D(),
-                keras.layers.Dense(num_classes, activation='relu'),
-                keras.layers.Softmax()
+                keras.layers.Dense(num_classes, activation='softmax'),
         ])
 
     def call(self, inputs, training, mask):
@@ -79,42 +116,79 @@ class _ResNet(keras.Model):
         return config
 
     @property
-    def initial_block(self):
+    def initial_block(self) -> SequentialLayer:
+        """The initial block of the network, consisting of:
+
+        - A 7x7 2D Convolution of 2x2 stride and 64 filters.
+        - A 3x3 2D Max Pooling layer with 2x2 stride.
+
+        Returns:
+            SequentialLayer: The initial block of the ResNet.
+        """
         return self._initial_block
 
     @property
-    def residual_blocks(self):
+    def residual_blocks(self) -> SequentialLayer:
+        """The Residual blocks of the network.
+
+        Returns:
+            SequentialLayer: The specified `ResidualBlock` instances,
+            wrapped in a `SequentialLayer`.
+        """
         return self._residual_blocks
 
     @property
-    def output_block(self):
+    def output_block(self) -> SequentialLayer:
+        """The classifier block of the model.
+
+        Returns:
+            SequentialLayer: Output classifier block, if the model was
+            configured with `num_classes > 0`, else `None`.
+        """
         return self._output_block
 
 class ResNet18(_ResNet):
+    """An 18 layer ResNet with the following components.
+    
+    - A 7x7 2D Convolution of 2x2 stride and 64 filters.
+    - A 3x3 2D Max Pooling layer with 2x2 stride.
+    - 2x `ResidualBlock` with 3x3x64 convolutions.
+    - 2x `ResidualBlock` with 3x3x128 convolutions (the first of which
+    applies a 1x1x128 convolution to the shortcut connection).
+    - 2x `ResidualBlock` with 3x3x256 convolutions (the first of which
+    applies a 1x1x256 convolution to the shortcut connection).
+    - 2x `ResidualBlock` with 3x3x512 convolutions (the first of which
+    applies a 1x1x512 convolution to the shortcut connection).
+
+
+    Additionally, if `num_classes > 0`.
+    - A 2D Average Pooling layer.
+    - A Dense layer of `num_classes` units and a Softmax activation.
+    """
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
         blocks += [
-            residual.ResidualBlock((3,3), 64) for _ in range(2)
+            ResidualBlock((3,3), 64) for _ in range(2)
         ]
 
         # Block 1.
         blocks += [
-            residual.ResidualBlock((3,3), 128, shortcut_conv_depth=128),
-            residual.ResidualBlock((3,3), 128)
+            ResidualBlock((3,3), 128, shortcut_conv_depth=128),
+            ResidualBlock((3,3), 128)
         ]
 
         # Block 2.
         blocks += [
-            residual.ResidualBlock((3,3), 256, shortcut_conv_depth=256),
-            residual.ResidualBlock((3,3), 256)
+            ResidualBlock((3,3), 256, shortcut_conv_depth=256),
+            ResidualBlock((3,3), 256)
         ]
 
         # Block 3.
         blocks += [
-            residual.ResidualBlock((3,3), 512, shortcut_conv_depth=512),
-            residual.ResidualBlock((3,3), 512)
+            ResidualBlock((3,3), 512, shortcut_conv_depth=512),
+            ResidualBlock((3,3), 512)
         ]
 
         super().__init__(blocks, **kwargs)
@@ -124,33 +198,50 @@ class ResNet18(_ResNet):
         return ResNet18(**config)
 
 class ResNet34(_ResNet):
+    """A 34 layer ResNet with the following components.
+    
+    - A 7x7 2D Convolution of 2x2 stride and 64 filters.
+    - A 3x3 2D Max Pooling layer with 2x2 stride.
+    - 3x `ResidualBlock` with 3x3x64 convolutions.
+    - 4x `ResidualBlock` with 3x3x128 convolutions (the first of which
+    applies a 1x1x128 convolution to the shortcut connection).
+    - 6x `ResidualBlock` with 3x3x256 convolutions (the first of which
+    applies a 1x1x256 convolution to the shortcut connection).
+    - 3x `ResidualBlock` with 3x3x512 convolutions (the first of which
+    applies a 1x1x512 convolution to the shortcut connection).
+
+
+    Additionally, if `num_classes > 0`.
+    - A 2D Average Pooling layer.
+    - A Dense layer of `num_classes` units and a Softmax activation.
+    """
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
         blocks += [
-            residual.ResidualBlock((3, 3), 64) for _ in range(3)
+            ResidualBlock((3, 3), 64) for _ in range(3)
         ]
 
         # Block 1.
         blocks.append(
-            residual.ResidualBlock((3, 3), 128, shortcut_conv_depth=128))
+            ResidualBlock((3, 3), 128, shortcut_conv_depth=128))
         blocks += [
-            residual.ResidualBlock((3, 3), 128) for _ in range(3)
+            ResidualBlock((3, 3), 128) for _ in range(3)
         ]
 
         # Block 2.
         blocks.append(
-            residual.ResidualBlock((3, 3), 256, shortcut_conv_depth=256))
+            ResidualBlock((3, 3), 256, shortcut_conv_depth=256))
         blocks += [
-            residual.ResidualBlock((3, 3), 256) for _ in range(5)
+            ResidualBlock((3, 3), 256) for _ in range(5)
         ]
 
         # Block 3.
         blocks.append(
-            residual.ResidualBlock((3, 3), 512, shortcut_conv_depth=512))
+            ResidualBlock((3, 3), 512, shortcut_conv_depth=512))
         blocks += [
-            residual.ResidualBlock((3, 3), 512) for _ in range(2)
+            ResidualBlock((3, 3), 512) for _ in range(2)
         ]
 
         super().__init__(blocks, **kwargs)
@@ -160,30 +251,47 @@ class ResNet34(_ResNet):
         return ResNet34(**config)
 
 class ResNet50(_ResNet):
+    """A 50 layer ResNet with the following components.
+    
+    - A 7x7 2D Convolution of 2x2 stride and 64 filters.
+    - A 3x3 2D Max Pooling layer with 2x2 stride.
+    - 2x `ResidualBlock` with 3x3x64 convolutions.
+    - 2x `ResidualBlock` with 3x3x128 convolutions (the first of which
+    applies a 1x1x128 convolution to the shortcut connection).
+    - 2x `ResidualBlock` with 3x3x256 convolutions (the first of which
+    applies a 1x1x256 convolution to the shortcut connection).
+    - 2x `ResidualBlock` with 3x3x512 convolutions (the first of which
+    applies a 1x1x512 convolution to the shortcut connection).
+
+
+    Additionally, if `num_classes > 0`.
+    - A 2D Average Pooling layer.
+    - A Dense layer of `num_classes` units and a Softmax activation.
+    """
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
         blocks += [
-            residual.ResidualBlock((3, 3), 64) for _ in range(2)
+            ResidualBlock((3, 3), 64) for _ in range(2)
         ]
 
         # Block 1.
         blocks += [
-            residual.ResidualBlock((3, 3), 128, shortcut_conv_depth=128),
-            residual.ResidualBlock((3, 3), 128)
+            ResidualBlock((3, 3), 128, shortcut_conv_depth=128),
+            ResidualBlock((3, 3), 128)
         ]
 
         # Block 2.
         blocks += [
-            residual.ResidualBlock((3, 3), 256, shortcut_conv_depth=256),
-            residual.ResidualBlock((3, 3), 256)
+            ResidualBlock((3, 3), 256, shortcut_conv_depth=256),
+            ResidualBlock((3, 3), 256)
         ]
 
         # Block 3.
         blocks += [
-            residual.ResidualBlock((3, 3), 512, shortcut_conv_depth=512),
-            residual.ResidualBlock((3, 3), 512)
+            ResidualBlock((3, 3), 512, shortcut_conv_depth=512),
+            ResidualBlock((3, 3), 512)
         ]
 
         super().__init__(blocks, **kwargs)
@@ -193,38 +301,56 @@ class ResNet50(_ResNet):
         return ResNet50(**config)
 
 class ResNet101(_ResNet):
+    """A 101 layer ResNet with the following components.
+    
+    - A 7x7 2D Convolution of 2x2 stride and 64 filters.
+    - A 3x3 2D Max Pooling layer with 2x2 stride.
+    - 3x `ResidualBlock` with 1x1x64 and 3x3x64 convolutions (the first
+    of which applies a 1x1x64 convolution to the shortcut connection).
+    - 4x `ResidualBlock` with 1x1x128 and 3x3x128 convolutions (the first
+    of which applies a 1x1x128 convolution to the shortcut connection).
+    - 23x `ResidualBlock` with 1x1x256 and 3x3x256 convolutions (the first
+    of which applies a 1x1x256 convolution to the shortcut connection).
+    - 3x `ResidualBlock` with 3x3x512 convolutions (the first of which
+    applies a 1x1x512 convolution to the shortcut connection).
+
+
+    Additionally, if `num_classes > 0`.
+    - A 2D Average Pooling layer.
+    - A Dense layer of `num_classes` units and a Softmax activation.
+    """
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
-        blocks.append(residual.ResidualBlock(
+        blocks.append(ResidualBlock(
             (1, 1), 64, kernel_size_b=(3, 3), shortcut_conv_depth=64))
         blocks += [
-            residual.ResidualBlock(
+            ResidualBlock(
                 (1, 1), 64, kernel_size_b=(3, 3)) for _ in range(2)
         ]
 
         # Block 1.
-        blocks.append(residual.ResidualBlock(
+        blocks.append(ResidualBlock(
             (1, 1), 128, kernel_size_b=(3, 3), shortcut_conv_depth=128))
         blocks += [
-            residual.ResidualBlock(
+            ResidualBlock(
                 (1, 1), 128, kernel_size_b=(3, 3)) for _ in range(3)
         ]
 
         # Block 2.
-        blocks.append(residual.ResidualBlock(
+        blocks.append(ResidualBlock(
             (1, 1), 256, kernel_size_b=(3, 3), shortcut_conv_depth=256))
         blocks += [
-            residual.ResidualBlock(
+            ResidualBlock(
                 (1, 1), 256, kernel_size_b=(3, 3)) for _ in range(22)
         ]
 
         # Block 3.
-        blocks.append(residual.ResidualBlock(
+        blocks.append(ResidualBlock(
             (1, 1), 512, kernel_size_b=(3, 3), shortcut_conv_depth=512))
         blocks += [
-            residual.ResidualBlock(
+            ResidualBlock(
                 (1, 1), 512, kernel_size_b=(3, 3)) for _ in range(2)
         ]
 
@@ -235,38 +361,56 @@ class ResNet101(_ResNet):
         return ResNet101(**config)
 
 class ResNet152(_ResNet):
+    """A 152 layer ResNet with the following components.
+    
+    - A 7x7 2D Convolution of 2x2 stride and 64 filters.
+    - A 3x3 2D Max Pooling layer with 2x2 stride.
+    - 3x `ResidualBlock` with 1x1x64 and 3x3x64 convolutions (the first
+    of which applies a 1x1x64 convolution to the shortcut connection).
+    - 8x `ResidualBlock` with 1x1x128 and 3x3x128 convolutions (the first
+    of which applies a 1x1x128 convolution to the shortcut connection).
+    - 36x `ResidualBlock` with 1x1x256 and 3x3x256 convolutions (the first
+    of which applies a 1x1x256 convolution to the shortcut connection).
+    - 3x `ResidualBlock` with 3x3x512 convolutions (the first of which
+    applies a 1x1x512 convolution to the shortcut connection).
+
+
+    Additionally, if `num_classes > 0`.
+    - A 2D Average Pooling layer.
+    - A Dense layer of `num_classes` units and a Softmax activation.
+    """
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
-        blocks.append(residual.ResidualBlock(
+        blocks.append(ResidualBlock(
             (1, 1), 64, kernel_size_b=(3, 3), shortcut_conv_depth=64))
         blocks += [
-            residual.ResidualBlock(
+            ResidualBlock(
                 (1, 1), 64, kernel_size_b=(3, 3)) for _ in range(2)
         ]
 
         # Block 1.
-        blocks.append(residual.ResidualBlock(
+        blocks.append(ResidualBlock(
             (1, 1), 128, kernel_size_b=(3, 3), shortcut_conv_depth=128))
         blocks += [
-            residual.ResidualBlock(
+            ResidualBlock(
                 (1, 1), 128, kernel_size_b=(3, 3)) for _ in range(7)
         ]
 
         # Block 2.
-        blocks.append(residual.ResidualBlock(
+        blocks.append(ResidualBlock(
             (1, 1), 256, kernel_size_b=(3, 3), shortcut_conv_depth=256))
         blocks += [
-            residual.ResidualBlock(
+            ResidualBlock(
                 (1, 1), 256, kernel_size_b=(3, 3)) for _ in range(35)
         ]
 
         # Block 3.
-        blocks.append(residual.ResidualBlock(
+        blocks.append(ResidualBlock(
             (1, 1), 512, kernel_size_b=(3, 3), shortcut_conv_depth=512))
         blocks += [
-            residual.ResidualBlock(
+            ResidualBlock(
                 (1, 1), 512, kernel_size_b=(3, 3)) for _ in range(2)
         ]
 
@@ -276,7 +420,25 @@ class ResNet152(_ResNet):
     def from_config(cls, config):
         return ResNet152(**config)
 
-def resnet(arch: int = 18, num_classes: int = 0):
+def resnet(arch: int = 18, num_classes: int = 0) -> typing.Union[
+    ResNet18, ResNet34, ResNet50, ResNet101, ResNet152]:
+    """creates a ResNet model.
+
+    Args:
+        arch (int, optional): The architecture of the model.
+        Defaults to 18.
+        
+        num_classes (int, optional): The number of classes to use when a
+        classifier is required at the end of the network.
+        Defaults to 0.
+
+    Raises:
+        ValueError: If an unknown architecture is provided.
+
+    Returns:
+        typing.Union[ResNet18, ResNet34, ResNet50, ResNet101, ResNet152]: A 
+        `_ResNet` derived model of the specified `arch`.
+    """
     if arch == 18:
         return ResNet18(num_classes=num_classes)
 

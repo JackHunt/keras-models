@@ -41,7 +41,7 @@ class SequentialLayer(keras.layers.Layer):
     Arguments:
         layers: A list of layers to be executed in sequence.
     """
-    def __init__(self, layers: typing.Iterable[keras.layers.Layer]):
+    def __init__(self, layers: typing.List[keras.layers.Layer]):
         super().__init__()
 
         if not layers:
