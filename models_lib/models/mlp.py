@@ -28,27 +28,54 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import typing
+
 import keras
-from models_lib.layers.utils import sequential
+from models_lib.layers.utils.sequential import SequentialLayer
 
 class MLP(keras.Model):
-    def __init__(self, hidden_sizes, output_size, hidden_act='relu',
-                 output_act='relu', **kwargs):
+    def __init__(self,
+                 hidden_sizes: typing.Union[typing.List[int], typing.Tuple[int]],
+                 output_size: int,
+                 hidden_activation: str = 'relu', # TODO: Union with ops
+                 output_activation: str = 'relu', # TODO: ditto
+                 **kwargs):
+        """Creates an `MLP` model of the specified architecture.
+
+        Args:
+            hidden_sizes (typing.Union[typing.List[int], typing.Tuple[int]]): The
+            hidden architecture of the model, represented as a list or tuple of
+            integers, denoting the number of units per hidden layer.
+            
+            output_size (int): The number of units to use for the output layer.
+            
+            hidden_activation (str, optional): The type of activation function to
+            use for the hidden layers.
+            Defaults to 'relu'.
+
+            output_activation (str, optional): The type of activation function to
+            use for the output layer.
+            Defaults to 'relu'.
+
+        Raises:
+            ValueError: If `hidden_sizes` contains an element less than or equal to 0.
+            ValueError: If `output_size` is less than or equal to 0.
+        """
         super().__init__(**kwargs)
 
         self._hidden_sizes = hidden_sizes
         self._output_size = output_size
-        self._hidden_act = hidden_act
-        self._output_act = output_act
+        self._hidden_activation = hidden_activation
+        self._output_activation = output_activation
 
         if self.hidden_sizes:
             if any(n <= 0 for n in self.hidden_sizes):
                 raise ValueError(
                     "All hidden layer sizes must be greater than or equal to one.")
 
-        self._hidden = sequential.SequentialLayer(
+        self._hidden = SequentialLayer(
             [keras.layers.Dense(
-                n, activation=self.hidden_act) for n in self.hidden_sizes])
+                n, activation=self.hidden_activation) for n in self.hidden_sizes])
         else:
             self._hidden = None
 
@@ -57,7 +84,7 @@ class MLP(keras.Model):
                 "Output layer size must be greater than or equal to one.")
 
         self._output_layer = keras.layers.Dense(
-            self.output_size, activation=self.output_act)
+            self.output_size, activation=self.output_activation)
 
     def call(self, inputs):
         y = self.hidden_layers(inputs)
@@ -68,8 +95,8 @@ class MLP(keras.Model):
         config.update({
             'hidden_sizes': self.hidden_sizes,
             'output_size': self.output_size,
-            'hidden_act': self.hidden_act,
-            'output_act': self.output_act
+            'hidden_activation': self.hidden_activation,
+            'output_activation': self.output_activation
         })
         return config
 
@@ -78,25 +105,25 @@ class MLP(keras.Model):
         return MLP(**config)
 
     @property
-    def hidden_sizes(self):
+    def hidden_sizes(self) -> typing.Union[typing.List[int], typing.Tuple[int]]:
         return self._hidden_sizes
 
     @property
-    def output_size(self):
+    def output_size(self) -> int:
         return self._output_size
 
     @property
-    def hidden_act(self):
-        self._hidden_act
+    def hidden_activation(self) -> str:
+        self._hidden_activation
 
     @property
-    def output_act(self):
-        return self._output_act
+    def output_activation(self) -> str:
+        return self._output_activation
 
     @property
-    def hidden_layers(self):
+    def hidden_layers(self) -> SequentialLayer:
         return self._hidden
 
     @property
-    def output_layer(self):
+    def output_layer(self) -> keras.layers.Dense:
         return self._output_layer
