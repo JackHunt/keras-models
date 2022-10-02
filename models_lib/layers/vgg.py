@@ -38,14 +38,21 @@ class VGGBlock(SequentialLayer):
 
     - A number of 2D Convolutions
     - 2D Max Pooling
-
-    Arguments:
-        num_convolutions: The number of convolution kernels.
-        num_filters: The number of filters to use in the convolutions.
     """
-    def __init__(self, num_convolutions, num_filters):
+    def __init__(self,
+                 num_convolutions: int,
+                 num_filters: int):
+        """Instantiates a new `VGGBlock`.
+
+        Args:
+            num_convolutions (int): The number of convolution kernels.
+            num_filters (int): The number of filters to use in the convolutions.
+
+        Raises:
+            ValueError: If `num_convolutions` or `num_filters` is less than 1.
+        """
         self._num_convolutions = num_convolutions
-        if self.num_convolutions <= 0:
+        if self.num_convolutions < 1:
             raise ValueError(
                 "VGGBlock must have a positive, nonzero convolution count.")
 
@@ -78,11 +85,11 @@ class VGGBlock(SequentialLayer):
         return VGGBlock(**config)
 
     @property
-    def num_convolutions(self):
+    def num_convolutions(self) -> int:
         return self._num_convolutions
 
     @property
-    def num_filters(self):
+    def num_filters(self) -> int:
         return self._num_filters
 
 class VGGClassifier(SequentialLayer):
@@ -98,7 +105,15 @@ class VGGClassifier(SequentialLayer):
     Arguments:
         num_classes: The number of output classes.
     """
-    def __init__(self, num_classes):
+    def __init__(self, num_classes: int):
+        """Instantiates a new `VGGClassifier`.
+
+        Args:
+            num_classes (int): The number of target classes.
+
+        Raises:
+            ValueError: If `num_classes` is less than zero.
+        """
         if num_classes < 0:
             raise ValueError("VGGClassifier num_classes must be nonnegative.")
 
@@ -125,5 +140,5 @@ class VGGClassifier(SequentialLayer):
         return VGGClassifier(**config)
 
     @property
-    def num_classes(self):
+    def num_classes(self) -> int:
         return self._num_classes

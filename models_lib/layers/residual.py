@@ -46,18 +46,43 @@ class ResidualBlock(keras.layers.Layer):
     - Batch Normalization
 
     Arguments:
-        kernel_size: The size of the 2D convolution kernels.
+        kernel_size: 
         num_filters: The number of filters to use in the first two convolutions.
-        shortcut_conv_depth: The number of filters to use in the third,
-            downsampling convolution. Defaults to 0, disabling downsampling.
-        kernel_size_b: An optional kernel size for the second convolution, should
-            it need to differ from the first.
+        shortcut_conv_depth: 
+        kernel_size_b: 
     """
     def __init__(self,
                  kernel_size: typing.Union[int, typing.Tuple[int, int]],
                  num_filters: int,
                  shortcut_conv_depth: int = 0,
-                 kernel_size_b: int = None):
+                 kernel_size_b: typing.Union[int, typing.Tuple[int, int]] = None):
+        """Constructs a `ResidualBlock`.
+
+        Args:
+            kernel_size (typing.Union[int, typing.Tuple[int, int]]): The size
+            of the 2D convolution kernels.
+            
+            num_filters (int): The number of filters to use in the first
+            two convolutions.
+            
+            shortcut_conv_depth (int, optional): The number of filters to use
+            in the third, downsampling convolution.
+            Defaults to 0, disabling downsampling.
+            
+            kernel_size_b (typing.Union[int, typing.Tuple[int, int]], optional): An
+            optional kernel size for the second convolution, should it need to differ
+            from the first.
+            Defaults to None.
+
+        Raises:
+            ValueError: If `kernel_size` is or contains a value not greater
+            than zero.
+
+            ValueError: If `kernel_size_b` is or contains a value not greater
+            than zero.
+
+            ValueError: If `num_filters` is not greater than zero.
+        """
         super().__init__()
 
         if isinstance(kernel_size, int):
@@ -135,21 +160,21 @@ class ResidualBlock(keras.layers.Layer):
         return ResidualBlock(**config)
 
     @property
-    def kernel_size(self):
+    def kernel_size(self) -> typing.Union[int, typing.Tuple[int, int]]:
         return self._kernel_size
 
     @property
-    def kernel_size_b(self):
+    def kernel_size_b(self) -> typing.Union[int, typing.Tuple[int, int]]:
         return self._kernel_size_b
 
     @property
-    def num_filters(self):
+    def num_filters(self) -> int:
         return self._num_filters
 
     @property
-    def downsampling(self):
+    def downsampling(self) -> bool:
         return self._downsampling
 
     @property
-    def shortcut_conv_depth(self):
+    def shortcut_conv_depth(self) -> int:
         return self._shortcut_conv_depth
