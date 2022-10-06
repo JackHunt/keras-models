@@ -35,8 +35,24 @@ from models_lib.layers.utils.sequential import SequentialLayer
 class GoogLeNet(keras.Model):
     """This class implements the GoogLeNet model.
     """
-    def __init__(self):
+    def __init__(self,
+                 num_classes: int,
+                 output_0_dropout: float = 0.7,
+                 output_1_dropout: float = 0.7,
+                 output_2_dropout: float = 0.4):
         super().__init__()
+
+        if num_classes < 0:
+            raise ValueError("num_classes must not be negative.")
+
+        if not all(p > 0 and p < 1 for p in \
+            [output_0_dropout, output_1_dropout, output_2_dropout]):
+            raise ValueError("An invalid dropout probability was provided.")
+
+        self._num_classes = num_classes
+        self._dropout_0 = output_0_dropout
+        self._dropout_1 = output_1_dropout
+        self._dropout_2 = output_2_dropout
 
         # Block 0.
         self._block_0 = SequentialLayer([
@@ -84,9 +100,9 @@ class GoogLeNet(keras.Model):
             keras.layers.Conv2D(128, (1, 1), padding='same', activation='relu'),
             keras.layers.Flatten(),
             keras.layers.Dense(1024, activation='relu'),
-            keras.layers.Dropout(0.7),
-            keras.layers.Dense(10, activation='softmax')
-        ])
+            keras.layers.Dropout(self.output_0_dropout),
+            keras.layers.Dense(self.num_classes, activation='softmax')
+        ]) if self.num_classes else None
 
         # Block 1.
         self._block_1 = SequentialLayer([
@@ -113,9 +129,9 @@ class GoogLeNet(keras.Model):
             keras.layers.Conv2D(128, (1, 1), padding='same', activation='relu'),
             keras.layers.Flatten(),
             keras.layers.Dense(1024, activation='relu'),
-            keras.layers.Dropout(0.7),
-            keras.layers.Dense(10, activation='softmax')
-        ])
+            keras.layers.Dropout(self.output_1_dropout),
+            keras.layers.Dense(self.num_classes, activation='softmax')
+        ]) if self.num_classes else None
 
         # Block 2.
         self._block_2 = SequentialLayer([
@@ -135,29 +151,50 @@ class GoogLeNet(keras.Model):
         # Output Block 2.
         self._output_block_2 = SequentialLayer([
             keras.layers.GlobalAveragePooling2D(),
-            keras.layers.Dropout(0.4),
-            keras.layers.Dense(10, activation='softmax')
-        ])
+            keras.layers.Dropout(self.output_2_dropout),
+            keras.layers.Dense(self.num_classes, activation='softmax')
+        ]) if self.num_classes else None
 
     def call(self, inputs):
         x = self._block_0(inputs)
-        output_0 = self._output_block_0(x)
+        output_0 = self._output_block_0(x) if self.num_classes else None
 
         x = self._block_1(x)
-        output_1 = self._output_block_1(x)
+        output_1 = self._output_block_1(x) if self.num_classes else None
 
         x = self._block_2(x)
-        output_2 = self._output_block_2(x)
+        output_2 = self._output_block_2(x) if self.num_classes else None
 
-        return output_0, output_1, output_2
+        if self.num_classes:
+            return output_0, output_1, output_2
+        return x
 
     def get_config(self):
         config = super().get_config()
         config.update({
-            #
+            'num_classes': self.num_classes,
+            'output_0_dropout': self.output_0_dropout,
+            'output_1_dropout': self.output_1_dropout,
+            'output_2_dropout': self.output_2_dropout
         })
         return config
 
     @classmethod
     def from_config(cls, config):
         return GoogLeNet(**config)
+
+    @property
+    def num_classes(self) -> int:
+        return self._num_classes
+
+    @property
+    def output_0_dropout(self) -> float:
+        return self._dropout_0
+
+    @property
+    def output_1_dropout(self) -> float:
+        return self._dropout_1
+
+    @property
+    def output_2_dropout(self) -> float:
+        return self._dropout_2
