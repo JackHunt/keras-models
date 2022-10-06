@@ -38,8 +38,118 @@ class GoogLeNet(keras.Model):
     def __init__(self):
         super().__init__()
 
+        # Block 0.
+        self._block_0 = SequentialLayer([
+            keras.layers.Conv2D(64, (7, 7),
+                                padding='same',
+                                strides=(2, 2),
+                                activation='relu'),
+            keras.layers.MaxPool2D((3, 3),
+                                   padding='same',
+                                   strides=(2, 2)),
+            keras.layers.Conv2D(64, (1, 1),
+                                padding='same',
+                                strides=(1, 1),
+                                activation='relu'),
+            keras.layers.Conv2D(192, (3, 3),
+                                padding='same',
+                                strides=(1, 1),
+                                activation='relu'),
+            keras.layers.MaxPool2D((3, 3),
+                                   padding='same',
+                                   strides=(2, 2)),
+            InceptionBlock(64, 128, 32,
+                           num_filters_3x3_dim_reduce=96,
+                           num_filters_5x5_dim_reduce=16,
+                           max_pool=True,
+                           num_filters_max_pool_dim_reduce=32),
+            InceptionBlock(128, 192, 96,
+                           num_filters_3x3_dim_reduce=128,
+                           num_filters_5x5_dim_reduce=32,
+                           max_pool=True,
+                           num_filters_max_pool_dim_reduce=64),
+            keras.layers.MaxPool2D((3, 3),
+                                   padding='same',
+                                   strides=(2, 2)),
+            InceptionBlock(192, 208, 48,
+                           num_filters_3x3_dim_reduce=96,
+                           num_filters_5x5_dim_reduce=16,
+                           max_pool=True,
+                           num_filters_max_pool_dim_reduce=64)
+        ])
+
+        # Output Block 0.
+        self._output_block_0 = SequentialLayer([
+            keras.layers.AveragePooling2D((5, 5),strides=3),
+            keras.layers.Conv2D(128, (1, 1), padding='same', activation='relu'),
+            keras.layers.Flatten(),
+            keras.layers.Dense(1024, activation='relu'),
+            keras.layers.Dropout(0.7),
+            keras.layers.Dense(10, activation='softmax')
+        ])
+
+        # Block 1.
+        self._block_1 = SequentialLayer([
+            InceptionBlock(160, 224, 64,
+                           num_filters_3x3_dim_reduce=112,
+                           num_filters_5x5_dim_reduce=24,
+                           max_pool=True,
+                           num_filters_max_pool_dim_reduce=64),
+            InceptionBlock(128, 256, 64,
+                           num_filters_3x3_dim_reduce=128,
+                           num_filters_5x5_dim_reduce=24,
+                           max_pool=True,
+                           num_filters_max_pool_dim_reduce=64),
+            InceptionBlock(112, 288, 64,
+                           num_filters_3x3_dim_reduce=144,
+                           num_filters_5x5_dim_reduce=32,
+                           max_pool=True,
+                           num_filters_max_pool_dim_reduce=64)
+        ])
+
+        # Output Block 1.
+        self._output_block_1 = SequentialLayer([
+            keras.layers.AveragePooling2D((5, 5), strides=3),
+            keras.layers.Conv2D(128, (1, 1), padding='same', activation='relu'),
+            keras.layers.Flatten(),
+            keras.layers.Dense(1024, activation='relu'),
+            keras.layers.Dropout(0.7),
+            keras.layers.Dense(10, activation='softmax')
+        ])
+
+        # Block 2.
+        self._block_2 = SequentialLayer([
+            InceptionBlock(256, 320, 128,
+                           num_filters_3x3_dim_reduce=160,
+                           num_filters_5x5_dim_reduce=32,
+                           max_pool=True,
+                           num_filters_max_pool_dim_reduce=128),
+            keras.layers.MaxPool2D((3, 3), padding='same', strides=(2, 2)),
+            InceptionBlock(384, 384, 128,
+                           num_filters_3x3_dim_reduce=192,
+                           num_filters_5x5_dim_reduce=48,
+                           max_pool=True,
+                           num_filters_max_pool_dim_reduce=128),
+        ])
+
+        # Output Block 2.
+        self._output_block_2 = SequentialLayer([
+            keras.layers.GlobalAveragePooling2D(),
+            keras.layers.Dropout(0.4),
+            keras.layers.Dense(10, activation='softmax')
+        ])
+
     def call(self, inputs):
-        pass
+        x = self._block_0(inputs)
+        output_0 = self._output_block_0(x)
+
+        x = self._block_1(x)
+        output_1 = self._output_block_1(x)
+
+        x = self._block_2(x)
+        output_2 = self._output_block_2(x)
+
+        return output_0, output_1, output_2
 
     def get_config(self):
         config = super().get_config()
