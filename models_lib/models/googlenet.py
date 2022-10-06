@@ -198,3 +198,27 @@ class GoogLeNet(keras.Model):
     @property
     def output_2_dropout(self) -> float:
         return self._dropout_2
+
+    @property
+    def block_0(self) -> SequentialLayer:
+        return self._block_0
+
+    @property
+    def output_block_0(self) -> SequentialLayer:
+        return self._output_block_0
+
+    @property
+    def block_1(self) -> SequentialLayer:
+        return self._block_1
+
+    @property
+    def output_block_1(self) -> SequentialLayer:
+        return self._output_block_1
+
+    @property
+    def block_2(self) -> SequentialLayer:
+        return self._block_2
+
+    @property
+    def output_block_2(self) -> SequentialLayer:
+        return self._output_block_2
