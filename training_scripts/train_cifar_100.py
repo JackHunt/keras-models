@@ -41,59 +41,15 @@ from functools import partial
 
 import keras
 
-import tensorflow_datasets as tfds
 import tensorflow as tf
 
+from models_lib.models.googlenet import GoogLeNet
 from models_lib.models.residual import resnet
 from models_lib.models.vgg import vgg
+from models_lib.utils import data
 
 
-def create_dataset(batch_size: int = 16,
-                   dtype: tf.DType = tf.float32,
-                   target_shape: typing.Tuple[int, int] = None):
-    """Creates two CIFAR100 datasets, one for training and one
-    for testing.
-
-    Args:
-        batch_size (int, optional): The batch size for the dataset. Defaults to 16.
-        dtype (tf.DType, optional): The dtype of the output data. Defaults to tf.float32.
-        target_shape (tuple, optional): Shape to which the images should be reshaped.
-    """
-    target_shape = tf.convert_to_tensor(target_shape) if target_shape else None
-
-    def data_pipeline(ds: tf.data.Dataset,
-                      training: bool = True):
-        f = lambda x, t: (tf.cast(x, dtype) / 255., t)
-
-        g = lambda x, t: (x, t)
-        if not target_shape is None:
-            g = lambda x, t: (tf.image.resize(
-                x, target_shape, method=tf.image.ResizeMethod.BICUBIC), t)
-
-        ds = ds.map(f, num_parallel_calls=tf.data.AUTOTUNE)
-        ds = ds.map(g, num_parallel_calls=tf.data.AUTOTUNE)
-        ds = ds.cache()
-
-        if training:
-            ds = ds.shuffle(ds_info.splits['train'].num_examples)
-
-        ds = ds.batch(batch_size)
-        ds = ds.prefetch(tf.data.AUTOTUNE)
-
-        return ds
-
-    (ds_train, ds_test), ds_info = tfds.load(
-        'cifar100',
-        split=['train', 'test'],
-        shuffle_files=True,
-        as_supervised=True,
-        with_info=True
-    )
-
-    return data_pipeline(ds_train), data_pipeline(ds_test, training=False)
-
-
-def create_model(m_type: str, m_arch: int, num_classes: int = 10) -> tf.keras.Model:
+def create_model(m_type: str, m_arch: int, num_classes: int = 100) -> tf.keras.Model:
     """_summary_
 
     Args:
@@ -108,6 +64,9 @@ def create_model(m_type: str, m_arch: int, num_classes: int = 10) -> tf.keras.Mo
         tf.keras.Model: An initialised Keras model of the requested architecture.
     """
     if m_type in ('resnet', 'Resnet', 'ResNet'):
+        if m_arch is None:
+            m_arch = 18
+        
         resnet_archs = (18, 34, 50, 101, 152)
         if not m_arch in resnet_archs:
             raise ValueError(
@@ -121,12 +80,18 @@ def create_model(m_type: str, m_arch: int, num_classes: int = 10) -> tf.keras.Mo
         return resnet(m_arch)
 
     if m_type in ('vgg', 'VGG'):
+        if m_arch is None:
+            m_arch = 11
+
         vgg_archs = (11, 13, 16, 19)
         if not m_arch in vgg_archs:
             raise ValueError(
                 f"Invalid VGG architecture. Architecture must be one of {vgg_archs}")
 
         return vgg(m_arch, num_classes=num_classes)
+
+    if m_type in ('googlenet, GoogLeNet'):
+        return GoogLeNet(num_classes=num_classes)
 
     raise ValueError(f"Model type {m_type} is invalid.")
 
@@ -160,17 +125,21 @@ def train_model(model_fn: typing.Callable,
         ds_train, ds_test = data_fn()
         model = model_fn()
 
+        if isinstance(model, GoogLeNet):
+            ds_train = data.duplicate_targets(ds_train, 3)
+            ds_test = data.duplicate_targets(ds_test, 3)
+
         model.compile(opt_fn(learning_rate), 'mse')
+            
         model.fit(ds_train,
                   epochs=epochs)
-
         model.eval(ds_test)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a net on CIFAR100.')
     parser.add_argument('model_type', type=str)
-    parser.add_argument('model_arch', type=int)
+    parser.add_argument('--model_arch', type=int, default=None)
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--learning_rate', type=float, default=0.01)
@@ -185,7 +154,7 @@ if __name__ == '__main__':
     if bs <= 0:
         raise ValueError("A nonzero, nonnegative batch size is required.")
 
-    dataset_fn = partial(create_dataset, bs, tf.float16, (48, 48))
+    dataset_fn = partial(data.create_cifar_100, bs, tf.float16, (48, 48))
 
     num_epochs = args.epochs
 
