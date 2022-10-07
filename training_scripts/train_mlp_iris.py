@@ -48,8 +48,8 @@ def create_dataset(batch_size=4):
 def create_model():
   return tf.keras.Sequential([
     MLP([16, 8, 4], 3,
-        hidden_act='sigmoid',
-        output_act='sigmoid')
+        hidden_activation='sigmoid',
+        output_activation='sigmoid')
   ])
 
 def do_training():
