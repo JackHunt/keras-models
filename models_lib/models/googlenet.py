@@ -96,7 +96,7 @@ class GoogLeNet(keras.Model):
 
         # Output Block 0.
         self._output_block_0 = SequentialLayer([
-            keras.layers.AveragePooling2D((5, 5),strides=3),
+            keras.layers.AveragePooling2D((5, 5), strides=(3, 3), padding='same'),
             keras.layers.Conv2D(128, (1, 1), padding='same', activation='relu'),
             keras.layers.Flatten(),
             keras.layers.Dense(1024, activation='relu'),
@@ -125,7 +125,7 @@ class GoogLeNet(keras.Model):
 
         # Output Block 1.
         self._output_block_1 = SequentialLayer([
-            keras.layers.AveragePooling2D((5, 5), strides=3),
+            keras.layers.AveragePooling2D((5, 5), strides=(3, 3), padding='same'),
             keras.layers.Conv2D(128, (1, 1), padding='same', activation='relu'),
             keras.layers.Flatten(),
             keras.layers.Dense(1024, activation='relu'),
