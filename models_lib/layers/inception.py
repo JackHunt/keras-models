@@ -99,11 +99,13 @@ class InceptionBlock(keras.layers.Layer):
         b1_out = self._branch_1(inputs)
         b2_out = self._branch_2(inputs)
 
-        b3_out = []
+        out = tf.concat([b0_out, b1_out, b2_out], 3)
+
         if self.max_pool:
             b3_out = self._branch_3(inputs)
+            out = tf.concat([out, b3_out], 3)
 
-        return tf.concat(b0_out, b1_out, b2_out, b3_out)
+        return out
 
     def get_config(self):
         config = super().get_config()
