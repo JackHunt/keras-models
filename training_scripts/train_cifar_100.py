@@ -66,7 +66,7 @@ def create_model(m_type: str, m_arch: int, num_classes: int = 100) -> tf.keras.M
     if m_type in ('resnet', 'Resnet', 'ResNet'):
         if m_arch is None:
             m_arch = 18
-        
+
         resnet_archs = (18, 34, 50, 101, 152)
         if not m_arch in resnet_archs:
             raise ValueError(
@@ -115,10 +115,10 @@ def train_model(model_fn: typing.Callable,
     """_summary_
 
     Args:
-        model_fn (typing.Callable): _description_
-        data_fn (typing.Callable): _description_
-        epochs (int): _description_
-        learning_rate (float): _description_
+        model_fn (typing.Callable): A function returning a `keras.Model`.
+        data_fn (typing.Callable): A function returning a `tf.Dataset`.
+        epochs (int): Number of training epochs.
+        learning_rate (float): Learning rate for training.
     """
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
@@ -129,8 +129,8 @@ def train_model(model_fn: typing.Callable,
             ds_train = data.duplicate_targets(ds_train, 3)
             ds_test = data.duplicate_targets(ds_test, 3)
 
-        model.compile(opt_fn(learning_rate), 'mse')
-            
+        model.compile(opt_fn(learning_rate), 'sparse_categorical_crossentropy')
+
         model.fit(ds_train,
                   epochs=epochs)
         model.eval(ds_test)

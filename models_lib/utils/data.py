@@ -66,6 +66,10 @@ def duplicate_targets(ds: tf.data.Dataset, n: int) -> tf.data.Dataset:
     return ds.map(lambda x, t: (x, tuple(t for _ in range(n))),
                   num_parallel_calls=tf.data.AUTOTUNE)
 
+def make_categorical(ds: tf.data.Dataset, num_classes: int) -> tf.data.Dataset:
+    return ds.map(lambda x, t: (x, tf.one_hot(t, num_classes)),
+                  num_parallel_calls=tf.data.AUTOTUNE)
+
 def create_cifar_100(batch_size: int = 16,
                      dtype: tf.DType = tf.float32,
                      target_shape: typing.Tuple[int, int] = None) -> tf.data.Dataset:
@@ -90,6 +94,7 @@ def create_cifar_100(batch_size: int = 16,
     ds_train = normalize_resize_images(ds_train,
                                        dtype=dtype,
                                        target_shape=target_shape)
+    ds_train = make_categorical(ds_train, 100)
     ds_train = shuffle_batch_prefetch(ds_train,
                                       batch_size=batch_size,
                                       ds_info=ds_info)
@@ -97,6 +102,7 @@ def create_cifar_100(batch_size: int = 16,
     ds_test = normalize_resize_images(ds_test,
                                       dtype=dtype,
                                       target_shape=target_shape)
+    ds_train = make_categorical(ds_test, 100)
     ds_test = shuffle_batch_prefetch(ds_test,
                                      batch_size=batch_size,
                                      training=False)
