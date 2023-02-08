@@ -28,8 +28,25 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from models_lib.layers import inception
-from models_lib.layers import lstm
-from models_lib.layers import residual
-from models_lib.layers import utils
-from models_lib.layers import vgg
+import keras
+
+class LSTMCell(keras.layers.Layer):
+    def __init__(self):
+        self._in_gate = None
+        self._memory = None
+        self._out_gate = None
+
+    def call(self, inputs):
+        pass
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            #
+        })
+
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return LSTMCell(**config)
