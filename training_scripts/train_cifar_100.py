@@ -28,13 +28,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Trains and tests a CNN model on the CIFAR100 dataset.
-
-Raises:
-    ValueError: If an invalid batch size is provided.
-    ValueError: If an invalid learning rate is provided.
-"""
-
 import argparse
 import typing
 from functools import partial
@@ -49,20 +42,8 @@ from models_lib.models.vgg import vgg
 from models_lib.utils import data
 
 
-def create_model(m_type: str, m_arch: int, num_classes: int = 100) -> tf.keras.Model:
-    """_summary_
-
-    Args:
-        m_type (str): The string description of the model.
-        m_arch (int): The integer identifier of the model architecture.
-
-    Raises:
-        ValueError: If an invalid model type is requested.
-        ValueError: If an invalid model architecture is requested.
-
-    Returns:
-        tf.keras.Model: An initialised Keras model of the requested architecture.
-    """
+def create_model(m_type: str, m_arch:int,
+                 num_classes: int = 100) -> tf.keras.Model:
     if m_type in ('resnet', 'Resnet', 'ResNet'):
         if m_arch is None:
             m_arch = 18
@@ -97,14 +78,6 @@ def create_model(m_type: str, m_arch: int, num_classes: int = 100) -> tf.keras.M
 
 
 def opt_fn(learning_rate: float):
-    """Generates a Stochastic Gradient Descent optimiser.
-
-    Args:
-        learning_rate (float): The learning rate for gradient updates.
-
-    Returns:
-        tf.keras.optimizers.SGD: A Keras SGD optimiser.
-    """
     return tf.keras.optimizers.Adam(learning_rate)
 
 
@@ -112,14 +85,6 @@ def train_model(model_fn: typing.Callable,
                 data_fn: typing.Callable,
                 epochs: int,
                 learning_rate: float):
-    """_summary_
-
-    Args:
-        model_fn (typing.Callable): A function returning a `keras.Model`.
-        data_fn (typing.Callable): A function returning a `tf.Dataset`.
-        epochs (int): Number of training epochs.
-        learning_rate (float): Learning rate for training.
-    """
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
         ds_train, ds_test = data_fn()
