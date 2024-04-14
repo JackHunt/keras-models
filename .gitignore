@@ -133,3 +133,4 @@ tf_env
 # Emacs shadow copies
 *~
 .#*
+/wandb
