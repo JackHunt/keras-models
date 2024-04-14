@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 
-# Copyright (c) 2022, Jack Hunt
+# Copyright (c) 2024, Jack Hunt
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -28,83 +28,89 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import typing
+from pathlib import Path
+from typing import Tuple
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-def normalize_resize_images(ds: tf.data.Dataset,
-                            dtype: tf.DType = tf.float32,
-                            target_shape: typing.Tuple[int, int] = None) -> tf.data.Dataset:
-    f = lambda x, t: (tf.cast(x, dtype) / 255., t)
+def normalize_images(ds: tf.data.Dataset,
+                     dtype: tf.DType = tf.float32) -> tf.data.Dataset:
+  return ds.map(lambda x, t: (tf.cast(x, dtype) / 255., t),
+                num_parallel_calls=tf.data.AUTOTUNE)
 
-    g = lambda x, t: (x, t)
-    if not target_shape is None:
-        g = lambda x, t: (tf.image.resize(
-            x, target_shape, method=tf.image.ResizeMethod.BICUBIC), t)
 
-    ds = ds.map(f, num_parallel_calls=tf.data.AUTOTUNE)
-    ds = ds.map(g, num_parallel_calls=tf.data.AUTOTUNE)
+def resize_images(ds: tf.data.Dataset,
+                  target_shape: Tuple[int, int]) -> tf.data.Dataset:
+  return ds.map(lambda x, t: (tf.image.resize(x,
+                                              target_shape,
+                                              method=tf.image.ResizeMethod.BICUBIC),
+                              t),
+                num_parallel_calls=tf.data.AUTOTUNE)
 
-    return ds
+def minmax_norm(ds: tf.data.Dataset,
+                axis: int = 0) -> tf.data.Dataset:
+  def minmax(x):
+    x_min = tf.reduce_min(x, axis=axis)
+    x_max = tf.reduce_max(x, axis=axis)
+
+    return (x - x_min) / (x_max - x_min)
+
+  return ds.map(lambda x, t: (minmax(x), t),
+                num_parallel_calls=tf.data.AUTOTUNE)
 
 def shuffle_batch_prefetch(ds: tf.data.Dataset,
                            batch_size: int = 32,
                            ds_info: tfds.core.DatasetInfo = None,
                            training: bool = True) -> tf.data.Dataset:
-    ds = ds.cache()
+  ds = ds.cache()
 
-    if training and not ds_info is None:
-        ds = ds.shuffle(ds_info.splits['train'].num_examples)
+  if training and not ds_info is None:
+    ds = ds.shuffle(ds_info.splits['train'].num_examples)
 
-    ds = ds.batch(batch_size)
-    ds = ds.prefetch(tf.data.AUTOTUNE)
-
-    return ds
+  ds = ds.batch(batch_size)
+  return ds.prefetch(tf.data.AUTOTUNE)
 
 def duplicate_targets(ds: tf.data.Dataset, n: int) -> tf.data.Dataset:
-    return ds.map(lambda x, t: (x, tuple(t for _ in range(n))),
-                  num_parallel_calls=tf.data.AUTOTUNE)
+  return ds.map(lambda x, t: (x, tuple(t for _ in range(n))),
+                num_parallel_calls=tf.data.AUTOTUNE)
 
 def make_categorical(ds: tf.data.Dataset, num_classes: int) -> tf.data.Dataset:
-    return ds.map(lambda x, t: (x, tf.one_hot(t, num_classes)),
-                  num_parallel_calls=tf.data.AUTOTUNE)
+  return ds.map(lambda x, t: (x, tf.one_hot(t, num_classes)),
+                num_parallel_calls=tf.data.AUTOTUNE)
+
+def load_tfds(name: str,
+              train_only: bool = False) -> Tuple[Tuple[tf.data.Dataset, tf.data.Dataset],
+                                                 tfds.core.DatasetInfo]:
+   return tfds.load(name,
+                    split=['train', 'test'] if not train_only else ['train'],
+                    shuffle_files=True,
+                    as_supervised=True,
+                    with_info=True)
 
 def create_cifar_100(batch_size: int = 16,
                      dtype: tf.DType = tf.float32,
-                     target_shape: typing.Tuple[int, int] = None) -> tf.data.Dataset:
-    """Creates two CIFAR100 datasets, one for training and one
-    for testing.
+                     normalise: bool = True,
+                     target_shape: Tuple[int, int] = None) -> Tuple[tf.data.Dataset,
+                                                                    tf.data.Dataset]:
+  target_shape = tf.convert_to_tensor(target_shape) if target_shape else None
 
-    Args:
-        batch_size (int, optional): The batch size for the dataset. Defaults to 16.
-        dtype (tf.DType, optional): The dtype of the output data. Defaults to tf.float32.
-        target_shape (tuple, optional): Shape to which the images should be reshaped.
-    """
-    target_shape = tf.convert_to_tensor(target_shape) if target_shape else None
+  (ds_train, ds_test), ds_info = load_tfds('cifar100')
 
-    (ds_train, ds_test), ds_info = tfds.load(
-        'cifar100',
-        split=['train', 'test'],
-        shuffle_files=True,
-        as_supervised=True,
-        with_info=True
-    )
+  def preprocess(ds, training):
+    ds = resize_images(normalise_images(ds) if normalise else ds,
+                       dtype=dtype,
+                       target_shape=target_shape)
+    ds = make_categorical(ds, 100)
+    return shuffle_batch_prefetch(ds,
+                                  batch_size=batch_size,
+                                  ds_info=ds_info if training else None,
+                                  training=training)
 
-    ds_train = normalize_resize_images(ds_train,
-                                       dtype=dtype,
-                                       target_shape=target_shape)
-    ds_train = make_categorical(ds_train, 100)
-    ds_train = shuffle_batch_prefetch(ds_train,
-                                      batch_size=batch_size,
-                                      ds_info=ds_info)
+  return preprocess(ds_train, True), preprocess(ds_test, False)
 
-    ds_test = normalize_resize_images(ds_test,
-                                      dtype=dtype,
-                                      target_shape=target_shape)
-    ds_train = make_categorical(ds_test, 100)
-    ds_test = shuffle_batch_prefetch(ds_test,
-                                     batch_size=batch_size,
-                                     training=False)
-
-    return ds_train, ds_test
+def create_iris(batch_size: int = 16,
+                normalise: bool = False) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
+  ds, _ = load_tfds('iris', train_only=True)
+  ds = ds[0]
+  return minmax_norm(ds) if normalise else ds
