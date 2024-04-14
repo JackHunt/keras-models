@@ -31,6 +31,8 @@
 import sys
 sys.path.append('..')
 
+import keras
+
 import tensorflow as tf
 from sklearn import datasets
 
@@ -39,7 +41,7 @@ from models_lib.models.mlp import MLP
 def create_dataset(batch_size=4):
     iris = datasets.load_iris()
     x = iris['data']
-    t = tf.keras.utils.to_categorical(iris['target'])
+    t = keras.utils.to_categorical(iris['target'])
 
     iris_ds = tf.data.Dataset.from_tensor_slices((x, t))
     iris_ds = iris_ds.batch(batch_size)
@@ -55,10 +57,10 @@ def create_model():
 def do_training():
     ds = create_dataset()
     model = create_model()
-    opt = tf.keras.optimizers.SGD(0.1)
+    opt = keras.optimizers.SGD(0.1)
     model.compile(optimizer=opt, loss='mse')
 
     model.fit(ds, epochs=300, validation_split=0.2)
-  
+
 if __name__=='__main__':
     do_training()
