@@ -1,16 +1,28 @@
-- architecture:
-    type: mlp
-  - spec:
-      layer_unit_counts: [16, 8, 4]
-      layer_activations: ['sigmoid', 'sigmoid', 'sigmoid']
+architecture:
+  arch_type: mlp
+  spec:
+    hidden_sizes:
+      - 16
+      - 8
+    output_size: 4
+    hidden_activation: sigmoid
+    output_activation: sigmoid
 
-- dataset:
-    name: iris
-    minmax_norm_inputs: true
-    validation_split: 0.2
+dataset:
+  name: iris
+  options:
+    batch_size: 8
+    normalise: true
 
-- training:
-    - epochs
-    - optimiser:
-        type: sgd
-        lr: 0.01
+training:
+  epochs: 100
+  optimiser:
+    type: sgd
+    spec:
+      learning_rate: 0.01
+  losses:
+    - MSE
+  loss_weights: null
+  metrics: null
+
+wandb_project: "GH Keras Models"
