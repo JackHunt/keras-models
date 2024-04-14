@@ -1,0 +1,16 @@
+- architecture:
+    type: mlp
+  - spec:
+      layer_unit_counts: [16, 8, 4]
+      layer_activations: ['sigmoid', 'sigmoid', 'sigmoid']
+
+- dataset:
+    name: iris
+    minmax_norm_inputs: true
+    validation_split: 0.2
+
+- training:
+    - epochs
+    - optimiser:
+        type: sgd
+        lr: 0.01
