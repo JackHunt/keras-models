@@ -134,3 +134,4 @@ tf_env
 *~
 .#*
 /wandb
+/tensorboard
