@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 
-# Copyright (c) 2022, Jack Hunt
+# Copyright (c) 2024, Jack Hunt
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -35,135 +35,133 @@ from models_lib.layers.vgg import VGGBlock, VGGClassifier
 from models_lib.layers.utils.sequential import SequentialLayer
 
 class _VGGNet(keras.Model):
-    """Base class for VGG type CNN models, with an optional classifier.
-    """
-    def __init__(self,
-                 vgg_blocks: typing.List[VGGBlock],
-                 num_classes: int = 0,
-                 **kwargs):
-        """Instantiates a new VGG model with the `VGGBlock` instances
-        provided in `vgg_blocks`.
+  def __init__(self,
+               vgg_blocks: typing.List[VGGBlock],
+               num_classes: int = 0,
+               **kwargs):
+    super().__init__(**kwargs)
 
-        Args:
-            vgg_blocks (typing.List[VGGBlock]): The `VGGBlock`
-            instances that make up the core of the network.
+    for b in vgg_blocks:
+      if not isinstance(b, VGGBlock):
+        raise ValueError("Non VGGBlock found.")
 
-            num_classes (int, optional): Number of classes for which the
-            model is to perform classification over.
-            Defaults to 0.
+    self._vgg_blocks = SequentialLayer(vgg_blocks)
 
-        Raises:
-            ValueError: _description_
-        """
-        super().__init__(**kwargs)
+    self._classifier_block = None
+    if num_classes > 0:
+      self._classifier_block = VGGClassifier(num_classes)
 
-        for b in vgg_blocks:
-            if not isinstance(b, VGGBlock):
-                raise ValueError("Non VGGBlock found.")
+  def call(self, inputs):
+    features = self.vgg_blocks(inputs)
+    if not self.classifier_block:
+      return features
+    return self.classifier_block(features)
 
-        self._vgg_blocks = SequentialLayer(vgg_blocks)
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+      'vgg_blocks': self.vgg_blocks,
+      'num_classes': self.classifier_block.num_classes
+    })
+    return config
 
-        self._classifier_block = None
-        if num_classes > 0:
-            self._classifier_block = VGGClassifier(num_classes)
+  @property
+  def vgg_blocks(self) -> SequentialLayer:
+    return self._vgg_blocks
 
-    def call(self, inputs):
-        features = self.vgg_blocks(inputs)
-        if not self.classifier_block:
-            return features
-        return self.classifier_block(features)
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'vgg_blocks': self.vgg_blocks,
-            'num_classes': self.classifier_block.num_classes
-        })
-        return config
-
-    @property
-    def vgg_blocks(self) -> SequentialLayer:
-        return self._vgg_blocks
-
-    @property
-    def classifier_block(self) -> VGGClassifier:
-        return self._classifier_block
+  @property
+  def classifier_block(self) -> VGGClassifier:
+    return self._classifier_block
 
 class VGG11(_VGGNet):
-    def __init__(self, **kwargs):
-        blocks = [
-            VGGBlock(1, 64),
-            VGGBlock(1, 128),
-            VGGBlock(2, 256),
-            VGGBlock(2, 512),
-            VGGBlock(2, 512)
-        ]
+  def __init__(self,
+               name: str = "VGG11",
+               **kwargs):
+    blocks = [
+      VGGBlock(1, 64),
+      VGGBlock(1, 128),
+      VGGBlock(2, 256),
+      VGGBlock(2, 512),
+      VGGBlock(2, 512)
+    ]
 
-        super().__init__(blocks, **kwargs)
+    super().__init__(blocks,
+                     name=name,
+                     **kwargs)
 
     @classmethod
     def from_config(cls, config):
         return VGG11(**config)
 
 class VGG13(_VGGNet):
-    def __init__(self, **kwargs):
-        blocks = [
-            VGGBlock(2, 64),
-            VGGBlock(2, 128),
-            VGGBlock(2, 256),
-            VGGBlock(2, 512),
-            VGGBlock(2, 512)
-        ]
+  def __init__(self,
+               name: str = "VGG13",
+               **kwargs):
+    blocks = [
+      VGGBlock(2, 64),
+      VGGBlock(2, 128),
+      VGGBlock(2, 256),
+      VGGBlock(2, 512),
+      VGGBlock(2, 512)
+    ]
 
-        super().__init__(blocks, **kwargs)
+    super().__init__(blocks,
+                     name=name,
+                     **kwargs)
 
-    @classmethod
-    def from_config(cls, config):
-        return VGG13(**config)
+  @classmethod
+  def from_config(cls, config):
+    return VGG13(**config)
 
 class VGG16(_VGGNet):
-    def __init__(self, **kwargs):
-        blocks = [
-            VGGBlock(2, 64),
-            VGGBlock(2, 128),
-            VGGBlock(3, 256),
-            VGGBlock(3, 512),
-            VGGBlock(3, 512)
-        ]
+  def __init__(self,
+               name: str = "VGG16",
+               **kwargs):
+    blocks = [
+      VGGBlock(2, 64),
+      VGGBlock(2, 128),
+      VGGBlock(3, 256),
+      VGGBlock(3, 512),
+      VGGBlock(3, 512)
+    ]
 
-        super().__init__(blocks, **kwargs)
+    super().__init__(blocks, **kwargs)
 
-    @classmethod
-    def from_config(cls, config):
-        return VGG16(**config)
+  @classmethod
+  def from_config(cls, config):
+    return VGG16(**config)
 
 class VGG19(_VGGNet):
-    def __init__(self, **kwargs):
-        blocks = [
-            VGGBlock(2, 64),
-            VGGBlock(2, 128),
-            VGGBlock(4, 256),
-            VGGBlock(4, 512),
-            VGGBlock(4, 512)
-        ]
+  def __init__(self,
+               name: str = "VGG19",
+               **kwargs):
+    blocks = [
+      VGGBlock(2, 64),
+      VGGBlock(2, 128),
+      VGGBlock(4, 256),
+      VGGBlock(4, 512),
+      VGGBlock(4, 512)
+    ]
 
-        super().__init__(blocks, **kwargs)
+    super().__init__(blocks,
+                     name=name,
+                     **kwargs)
 
-    @classmethod
-    def from_config(cls, config):
-        return VGG19(**config)
+  @classmethod
+  def from_config(cls, config):
+    return VGG19(**config)
 
 def vgg(arch=11, num_classes=0):
-    if arch == 11:
-        return VGG11(num_classes=num_classes)
-  
-    if arch == 13:
-        return VGG13(num_classes=num_classes)
+  if arch == 11:
+    return VGG11(num_classes=num_classes)
 
-    if arch == 16:
-        return VGG16(num_classes=num_classes)
+  if arch == 13:
+    return VGG13(num_classes=num_classes)
 
-    if arch == 19:
-        return VGG19(num_classes=num_classes)
+  if arch == 16:
+    return VGG16(num_classes=num_classes)
 
-    raise ValueError("Invalid VGG architecture.")
+  if arch == 19:
+    return VGG19(num_classes=num_classes)
+
+  raise ValueError(f"Invalid VGG architecture: {arch}.")
