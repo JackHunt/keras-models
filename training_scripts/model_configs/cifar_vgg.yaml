@@ -1,0 +1,27 @@
+architecture:
+  arch_type: vgg
+  spec:
+    arch: 11
+    num_classes: 100
+
+dataset:
+  name: cifar_100
+  options:
+    batch_size: 64
+    normalise: true
+    target_shape:
+      - 48
+      - 48
+
+training:
+  epochs: 200
+  optimiser:
+    type: adam
+    spec:
+      learning_rate: 0.01
+  losses:
+    - categorical_crossentropy
+  loss_weights: null
+  metrics: null
+
+wandb_project: "GH Keras Models"
