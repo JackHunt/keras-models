@@ -41,9 +41,9 @@ def create_mlp(spec: Dict) -> MLP:
   return MLP(**spec)
 
 def create_resnet(spec: Dict) -> Union[_ResNet, keras.Sequential]:
-  resnet_size = spec['size']
-  if not resnet_size in (18, 34, 50, 101, 152): # TODO: Does this need moving?
-    raise ValueError(f"Invalid Resnet architecture: {resnet_size}.")
+  resnet_arch = spec['arch']
+  if not resnet_arch in (18, 34, 50, 101, 152): # TODO: Does this need moving?
+    raise ValueError(f"Invalid Resnet architecture: {resnet_arch}.")
 
   num_classes = spec['num_classes']
   if not num_classes:
@@ -52,7 +52,7 @@ def create_resnet(spec: Dict) -> Union[_ResNet, keras.Sequential]:
   assert num_classes > 0
 
   return keras.Sequential([
-    resnet(resnet_size),
+    resnet(resnet_arch),
     keras.layers.Flatten(),
     keras.layers.Dense(num_classes) # TODO: Replace with MLP class & softmax
   ])
