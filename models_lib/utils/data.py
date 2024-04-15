@@ -34,7 +34,7 @@ from typing import Tuple
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-def normalize_images(ds: tf.data.Dataset,
+def normalise_images(ds: tf.data.Dataset,
                      dtype: tf.DType = tf.float32) -> tf.data.Dataset:
   return ds.map(lambda x, t: (tf.cast(x, dtype) / 255., t),
                 num_parallel_calls=tf.data.AUTOTUNE)
@@ -120,7 +120,6 @@ def create_cifar_100(batch_size: int = 16,
 
   def preprocess(ds, training):
     ds = resize_images(normalise_images(ds) if normalise else ds,
-                       dtype=dtype,
                        target_shape=target_shape)
     ds = make_categorical(ds, 100)
     return shuffle_batch_prefetch(ds,
