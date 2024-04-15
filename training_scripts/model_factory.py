@@ -57,10 +57,10 @@ def create_resnet(spec: Dict) -> Union[_ResNet, keras.Sequential]:
     keras.layers.Dense(num_classes) # TODO: Replace with MLP class & softmax
   ])
 
-def create_vgg(architecture: Dict) -> _VGGNet:
-  vgg_size = spec['size']
-  if not vgg_size in (11, 13, 16, 19):
-    raise ValueError(f"Invalid VGG architecture: {vgg_size}.")
+def create_vgg(spec: Dict) -> _VGGNet:
+  vgg_arch = spec['arch']
+  if not vgg_arch in (11, 13, 16, 19):
+    raise ValueError(f"Invalid VGG architecture: {vgg_arch}.")
 
   return vgg(**spec)
 
