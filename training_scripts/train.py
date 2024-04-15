@@ -42,6 +42,8 @@ import yaml
 from dataset_factory import create_dataset
 from model_factory import create_model
 
+from models_lib.utils.data import split_dataset
+
 def get_optimiser(config: Dict) -> keras.optimizers.Optimizer:
   opt_type = config['type'].lower()
   opt_spec = config['spec']
@@ -55,15 +57,20 @@ def get_optimiser(config: Dict) -> keras.optimizers.Optimizer:
   raise ValueError(f"Unknown optimiser: {config['type']}")
 
 def get_callbacks(out_dir: str) -> None:
-  return [
-    keras.callbacks.TensorBoard(log_dir=Path(out_dir, "tensorboard")),
-    WandbMetricsLogger(log_freq=5),
-    WandbModelCheckpoint(Path(out_dir, "models"))
+  callbacks = [
+    keras.callbacks.TensorBoard(log_dir=Path(out_dir, "tensorboard"))
   ]
+
+  if use_wandb:
+    callbacks += [
+      WandbMetricsLogger(log_freq=5),
+      # WandbModelCheckpoint(filepath=Path(out_dir, "models"))
+    ]
+
+  return callbacks
 
 def train(config: Dict,
           out_dir: str) -> Tuple[keras.callbacks.History, keras.Model]:
-  dataset_config = config['dataset']
   train_config = config['training']
 
   model = create_model(config['architecture'])
@@ -72,10 +79,26 @@ def train(config: Dict,
                 loss_weights=train_config['loss_weights'],
                 metrics=train_config['metrics'])
 
-  history = model.fit(create_dataset(config['dataset']),
+  ds = create_dataset(config['dataset'])
+  if type(ds) == tuple:
+    if 'val_split' in train_config:
+      raise ValueError(
+        "val_split cannot be specified when using an already split tfds.")
+
+    train_ds, val_ds = ds
+  else:
+    if not 'val_split' in train_config:
+      raise ValueError(
+        "val_split must be specified when using a non split tfds.")
+
+    val_split = train_config['val_split']
+
+    train_ds, val_ds = split_dataset(ds, val_split)
+
+  history = model.fit(train_ds,
                       epochs=train_config['epochs'],
                       callbacks=get_callbacks(out_dir),
-                      validation_split=train_config['val_split'])
+                      validation_data=val_ds)
 
   return history, model
 
@@ -83,19 +106,24 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Train a network from a config.")
   parser.add_argument("config_file", type=str)
   parser.add_argument("--artifact_dir", type=str, default=None)
+  parser.add_argument('--wandb', default=False, action=argparse.BooleanOptionalAction)
 
   args = parser.parse_args()
+
+  use_wandb = args.wandb
 
   with open(args.config_file, 'r') as f:
     config = yaml.safe_load(f)
 
   out_dir = args.artifact_dir if args.artifact_dir else "."
 
-  wandb.init(
-    project=config['wandb_project'],
-    config=config
-  )
+  if use_wandb:
+    wandb.init(
+      project=config['wandb_project'],
+      config=config
+    )
 
   keras_history, model = train(config, out_dir)
 
-  wandb.finish()
+  if use_wandb:
+    wandb.finish()
