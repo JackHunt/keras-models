@@ -66,7 +66,8 @@ def shuffle_batch_prefetch(ds: tf.data.Dataset,
   ds = ds.cache()
 
   if training and not ds_info is None:
-    ds = ds.shuffle(ds_info.splits['train'].num_examples)
+    ds = ds.shuffle(ds_info.splits['train'].num_examples,
+                    reshuffle_each_iteration=False)
 
   ds = ds.batch(batch_size)
   return ds.prefetch(tf.data.AUTOTUNE)
@@ -87,6 +88,26 @@ def load_tfds(name: str,
                     shuffle_files=True,
                     as_supervised=True,
                     with_info=True)
+
+def split_dataset(ds: tf.data.Dataset,
+                  val_split: float) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
+
+  if val_split < 0 or val_split > 1:
+    raise ValueError("val_split must be between 0 and 1")
+
+  n = int(round(val_split * 10))
+
+  def is_val(i, d):
+    return i % n == 0
+
+  def is_train(i, d):
+    return not is_val(i, d)
+
+  val_ds = ds.enumerate().filter(is_val).map(lambda _, d: d)
+  train_ds = ds.enumerate().filter(is_train).map(lambda _, d: d)
+
+  return train_ds, val_ds
+
 
 def create_cifar_100(batch_size: int = 16,
                      dtype: tf.DType = tf.float32,
@@ -111,6 +132,8 @@ def create_cifar_100(batch_size: int = 16,
 
 def create_iris(batch_size: int = 16,
                 normalise: bool = False) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
-  ds, _ = load_tfds('iris', train_only=True)
-  ds = ds[0]
-  return minmax_norm(ds) if normalise else ds
+  ds, ds_info = load_tfds('iris', train_only=True)
+  ds = make_categorical(ds[0], 3)
+  ds = minmax_norm(ds) if normalise else ds
+  return shuffle_batch_prefetch(ds,
+                                batch_size=batch_size)
