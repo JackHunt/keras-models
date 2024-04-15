@@ -4,7 +4,7 @@ architecture:
     hidden_sizes:
       - 16
       - 8
-    output_size: 4
+    output_size: 3
     hidden_activation: sigmoid
     output_activation: sigmoid
 
@@ -15,13 +15,13 @@ dataset:
     normalise: true
 
 training:
-  epochs: 100
+  epochs: 200
   optimiser:
     type: sgd
     spec:
       learning_rate: 0.01
   losses:
-    - MSE
+    - categorical_crossentropy
   loss_weights: null
   metrics: null
   val_split: 0.2
