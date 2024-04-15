@@ -7,7 +7,7 @@ architecture:
 dataset:
   name: cifar_100
   options:
-    batch_size: 64
+    batch_size: 128
     normalise: true
     target_shape:
       - 48
@@ -18,7 +18,7 @@ training:
   optimiser:
     type: adam
     spec:
-      learning_rate: 0.01
+      learning_rate: 0.0001
   losses:
     - categorical_crossentropy
   loss_weights: null
