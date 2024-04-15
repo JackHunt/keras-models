@@ -28,19 +28,20 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import typing
+from typing import List, Tuple, Union
 
 import keras
 from models_lib.layers.utils.sequential import SequentialLayer
 
 class MLP(keras.Model):
   def __init__(self,
-               hidden_sizes: typing.Union[typing.List[int], typing.Tuple[int]],
+               hidden_sizes: Union[List[int], Tuple[int]],
                output_size: int,
                hidden_activation: str = 'relu', # TODO: Union with ops
                output_activation: str = 'relu', # TODO: ditto
+               name="MLP",
                **kwargs):
-    super().__init__(**kwargs)
+    super().__init__(name=name, **kwargs)
 
     self._hidden_sizes = hidden_sizes
     self._output_size = output_size
@@ -86,7 +87,7 @@ class MLP(keras.Model):
     return MLP(**config)
 
   @property
-  def hidden_sizes(self) -> typing.Union[typing.List[int], typing.Tuple[int]]:
+  def hidden_sizes(self) -> Union[List[int], Tuple[int]]:
     return self._hidden_sizes
 
   @property
