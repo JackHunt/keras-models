@@ -64,7 +64,7 @@ def create_vgg(spec: Dict) -> _VGGNet:
 
   return vgg(**spec)
 
-def create_googlenet() -> GoogLeNet:
+def create_googlenet(spec: Dict) -> GoogLeNet:
   return GoogLeNet(**spec)
 
 def create_model(architecture: Dict) -> keras.Model:
@@ -81,6 +81,6 @@ def create_model(architecture: Dict) -> keras.Model:
     return create_vgg(spec)
 
   if arch_type == "googlenet":
-    return create_googlenet(**spec)
+    return create_googlenet(spec)
 
   raise ValueError(f"Model type {arch_type} is invalid.")
