@@ -57,9 +57,12 @@ def get_optimiser(config: Dict) -> keras.optimizers.Optimizer:
   raise ValueError(f"Unknown optimiser: {config['type']}")
 
 def get_callbacks(out_dir: str) -> None:
-  callbacks = [
-    keras.callbacks.TensorBoard(log_dir=Path(out_dir, "tensorboard"))
-  ]
+  callbacks = []
+
+  if use_tensorboard:
+    callbacks += [
+      keras.callbacks.TensorBoard(log_dir=Path(out_dir, "tensorboard"))
+    ]
 
   if use_wandb:
     callbacks += [
@@ -95,6 +98,8 @@ def train(config: Dict,
 
     train_ds, val_ds = split_dataset(ds, val_split)
 
+  model.summary()
+
   history = model.fit(train_ds,
                       epochs=train_config['epochs'],
                       callbacks=get_callbacks(out_dir),
@@ -107,10 +112,12 @@ if __name__ == "__main__":
   parser.add_argument("config_file", type=str)
   parser.add_argument("--artifact_dir", type=str, default=None)
   parser.add_argument('--wandb', default=False, action=argparse.BooleanOptionalAction)
+  parser.add_argument('--tensorboard', default=False, action=argparse.BooleanOptionalAction)
 
   args = parser.parse_args()
 
   use_wandb = args.wandb
+  use_tensorboard = args.tensorboard
 
   with open(args.config_file, 'r') as f:
     config = yaml.safe_load(f)
