@@ -33,11 +33,13 @@ import argparse
 from pathlib import Path
 from typing import Dict, Tuple
 
-import keras
-import tensorflow as tf
+import yaml
 import wandb
 from wandb.keras import WandbMetricsLogger, WandbModelCheckpoint
-import yaml
+
+import keras
+from keras import Model
+from keras.optimizers import Adam, Optimizer, SGD
 
 from dataset_factory import create_dataset
 from model_factory import create_model
@@ -45,15 +47,15 @@ from model_factory import create_model
 from models_lib.utils.data import split_dataset
 
 
-def get_optimiser(config: Dict) -> keras.optimizers.Optimizer:
+def get_optimiser(config: Dict) -> Optimizer:
     opt_type = config["type"].lower()
     opt_spec = config["spec"]
 
     if opt_type == "sgd":
-        return keras.optimizers.SGD(**opt_spec)
+        return SGD(**opt_spec)
 
     if opt_type == "adam":
-        return keras.optimizers.Adam(**opt_spec)
+        return Adam(**opt_spec)
 
     raise ValueError(f"Unknown optimiser: {config['type']}")
 
@@ -73,7 +75,7 @@ def get_callbacks(out_dir: str) -> None:
     return callbacks
 
 
-def train(config: Dict, out_dir: str) -> Tuple[keras.callbacks.History, keras.Model]:
+def train(config: Dict, out_dir: str) -> Tuple[keras.callbacks.History, Model]:
     train_config = config["training"]
 
     model = create_model(config["architecture"])

@@ -30,7 +30,8 @@
 
 from typing import Dict, Union
 
-import keras
+from keras import Model, Sequential
+from keras.layers import Dense, Flatten
 
 from models_lib.models.googlenet import GoogLeNet
 from models_lib.models.mlp import MLP
@@ -42,7 +43,7 @@ def create_mlp(spec: Dict) -> MLP:
     return MLP(**spec)
 
 
-def create_resnet(spec: Dict) -> Union[_ResNet, keras.Sequential]:
+def create_resnet(spec: Dict) -> Union[_ResNet, Sequential]:
     resnet_arch = spec["arch"]
     if not resnet_arch in (18, 34, 50, 101, 152):  # TODO: Does this need moving?
         raise ValueError(f"Invalid Resnet architecture: {resnet_arch}.")
@@ -53,11 +54,11 @@ def create_resnet(spec: Dict) -> Union[_ResNet, keras.Sequential]:
 
     assert num_classes > 0
 
-    return keras.Sequential(
+    return Sequential(
         [
             resnet(resnet_arch),
-            keras.layers.Flatten(),
-            keras.layers.Dense(num_classes),  # TODO: Replace with MLP class & softmax
+            Flatten(),
+            Dense(num_classes),  # TODO: Replace with MLP class & softmax
         ]
     )
 
@@ -74,7 +75,7 @@ def create_googlenet(spec: Dict) -> GoogLeNet:
     return GoogLeNet(**spec)
 
 
-def create_model(architecture: Dict) -> keras.Model:
+def create_model(architecture: Dict) -> Model:
     arch_type = architecture["arch_type"].lower()
     spec = architecture["spec"]
 

@@ -30,11 +30,11 @@
 
 import typing
 
-import tensorflow as tf
-import keras
+from keras import Sequential
+from keras.layers import Add, BatchNormalization, Conv2D, Layer, ReLU
 
 
-class ResidualBlock(keras.layers.Layer):
+class ResidualBlock(Layer):
     def __init__(
         self,
         kernel_size: typing.Union[int, typing.Tuple[int, int]],
@@ -73,17 +73,17 @@ class ResidualBlock(keras.layers.Layer):
         self._shortcut_conv_depth = shortcut_conv_depth
         self._downsampling = self.shortcut_conv_depth > 0
 
-        self._conv = keras.Sequential(
+        self._conv = Sequential(
             [
-                keras.layers.Conv2D(
+                Conv2D(
                     kernel_size=self.kernel_size,
                     strides=(2, 2) if self.downsampling else (1, 1),
                     filters=self.num_filters,
                     padding="same",
                     activation="relu",
                 ),
-                keras.layers.BatchNormalization(),
-                keras.layers.Conv2D(
+                BatchNormalization(),
+                Conv2D(
                     kernel_size=self.kernel_size_b,
                     strides=(1, 1),
                     filters=self.num_filters,
@@ -94,7 +94,7 @@ class ResidualBlock(keras.layers.Layer):
         )
 
         if self.downsampling:
-            self._ds = keras.layers.Conv2D(
+            self._ds = Conv2D(
                 kernel_size=1,
                 strides=2,
                 filters=self.shortcut_conv_depth,
@@ -102,7 +102,7 @@ class ResidualBlock(keras.layers.Layer):
                 activation="relu",
             )
 
-        self._bn = keras.layers.BatchNormalization()
+        self._bn = BatchNormalization()
 
     def call(self, inputs):
         y = self._conv(inputs)
@@ -111,8 +111,8 @@ class ResidualBlock(keras.layers.Layer):
         if self.downsampling:
             residual = self._ds(residual)
 
-        y = keras.layers.Add()([y, residual])
-        y = keras.layers.ReLU()(y)
+        y = Add()([y, residual])
+        y = ReLU()(y)
         return self._bn(y)
 
     def get_config(self):

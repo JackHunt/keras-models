@@ -28,12 +28,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import keras
+from keras import Sequential
+from keras.layers import Conv2D, Concatenate, Layer, MaxPool2D
 
-import tensorflow as tf
 
-
-class InceptionBlock(keras.layers.Layer):
+class InceptionBlock(Layer):
     def __init__(
         self,
         num_filters_1x1: int,
@@ -56,76 +55,68 @@ class InceptionBlock(keras.layers.Layer):
 
         # 1x1 conv.
         branch_0_layers = [
-            keras.layers.Conv2D(
-                self.num_filters_1x1, (1, 1), padding="same", activation="relu"
-            )
+            Conv2D(self.num_filters_1x1, (1, 1), padding="same", activation="relu")
         ]
-        self._branch_0 = keras.Sequential(branch_0_layers)
+        self._branch_0 = Sequential(branch_0_layers)
 
         # 3x3 conv.
         branch_1_layers = [
-            keras.layers.Conv2D(
-                self.num_filters_3x3, (3, 3), padding="same", activation="relu"
-            )
+            Conv2D(self.num_filters_3x3, (3, 3), padding="same", activation="relu")
         ]
         if self.num_filters_3x3_dim_reduce:
             branch_1_layers.insert(
                 0,
-                keras.layers.Conv2D(
+                Conv2D(
                     self.num_filters_3x3_dim_reduce,
                     (1, 1),
                     padding="same",
                     activation="relu",
                 ),
             )
-        self._branch_1 = keras.Sequential(branch_1_layers)
+        self._branch_1 = Sequential(branch_1_layers)
 
         # 5x5 conv.
         branch_2_layers = [
-            keras.layers.Conv2D(
-                self.num_filters_5x5, (5, 5), padding="same", activation="relu"
-            )
+            Conv2D(self.num_filters_5x5, (5, 5), padding="same", activation="relu")
         ]
         if self.num_filters_5x5_dim_reduce:
             branch_2_layers.insert(
                 0,
-                keras.layers.Conv2D(
+                Conv2D(
                     self.num_filters_5x5_dim_reduce,
                     (1, 1),
                     padding="same",
                     activation="relu",
                 ),
             )
-        self._branch_2 = keras.Sequential(branch_2_layers)
+        self._branch_2 = Sequential(branch_2_layers)
 
         # Max Pool & 1x1 branch.
         self._branch_3 = None
         if self.max_pool:
-            branch_3_layers = [
-                keras.layers.MaxPool2D((3, 3), strides=(1, 1), padding="same")
-            ]
+            branch_3_layers = [MaxPool2D((3, 3), strides=(1, 1), padding="same")]
             if self.num_filters_max_pool_dim_reduce:
                 branch_3_layers.insert(
                     0,
-                    keras.layers.Conv2D(
+                    Conv2D(
                         self.num_filters_max_pool_dim_reduce,
                         (1, 1),
                         padding="same",
                         activation="relu",
                     ),
                 )
-            self._branch_3 = keras.Sequential(branch_3_layers)
+            self._branch_3 = Sequential(branch_3_layers)
 
     def call(self, inputs):
         b0_out = self._branch_0(inputs)
         b1_out = self._branch_1(inputs)
         b2_out = self._branch_2(inputs)
 
-        out = tf.concat([b0_out, b1_out, b2_out], 3)
+        out = Concatenate(axis=3)([b0_out, b1_out, b2_out])
 
         if self.max_pool:
             b3_out = self._branch_3(inputs)
-            out = tf.concat([out, b3_out], 3)
+            out = Concatenate(axis=3)([out, b3_out])
 
         return out
 

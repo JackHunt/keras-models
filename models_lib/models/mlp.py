@@ -30,10 +30,11 @@
 
 from typing import List, Tuple, Union
 
-import keras
+from keras import Model, Sequential
+from keras.layers import Dense
 
 
-class MLP(keras.Model):
+class MLP(Model):
     def __init__(
         self,
         hidden_sizes: Union[List[int], Tuple[int]],
@@ -56,11 +57,8 @@ class MLP(keras.Model):
                     "All hidden layer sizes must be greater than or equal to one."
                 )
 
-            self._hidden = keras.Sequential(
-                [
-                    keras.layers.Dense(n, activation=self.hidden_activation)
-                    for n in self.hidden_sizes
-                ]
+            self._hidden = Sequential(
+                [Dense(n, activation=self.hidden_activation) for n in self.hidden_sizes]
             )
         else:
             self._hidden = None
@@ -68,9 +66,7 @@ class MLP(keras.Model):
         if self.output_size <= 0:
             raise ValueError("Output layer size must be greater than or equal to one.")
 
-        self._output_layer = keras.layers.Dense(
-            self.output_size, activation=self.output_activation
-        )
+        self._output_layer = Dense(self.output_size, activation=self.output_activation)
 
     def call(self, inputs):
         y = self.hidden_layers(inputs)
@@ -110,9 +106,9 @@ class MLP(keras.Model):
         return self._output_activation
 
     @property
-    def hidden_layers(self) -> keras.Sequential:
+    def hidden_layers(self) -> Sequential:
         return self._hidden
 
     @property
-    def output_layer(self) -> keras.layers.Dense:
+    def output_layer(self) -> Dense:
         return self._output_layer

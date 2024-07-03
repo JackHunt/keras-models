@@ -28,10 +28,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import keras
+from keras import Sequential
+from keras.layers import Conv2D, Dense, Flatten, MaxPool2D
 
 
-class VGGBlock(keras.Sequential):
+class VGGBlock(Sequential):
     def __init__(self, num_convolutions: int, num_filters: int):
         self._num_convolutions = num_convolutions
         if self.num_convolutions < 1:
@@ -46,7 +47,7 @@ class VGGBlock(keras.Sequential):
         layers = []
         for _ in range(self.num_convolutions):
             layers.append(
-                keras.layers.Conv2D(
+                Conv2D(
                     filters=self.num_filters,
                     kernel_size=3,
                     padding="same",
@@ -54,7 +55,7 @@ class VGGBlock(keras.Sequential):
                 )
             )
 
-        layers.append(keras.layers.MaxPool2D(pool_size=2, strides=2))
+        layers.append(MaxPool2D(pool_size=2, strides=2))
 
         super().__init__(layers)
 
@@ -81,7 +82,7 @@ class VGGBlock(keras.Sequential):
         return self._num_filters
 
 
-class VGGClassifier(keras.Sequential):
+class VGGClassifier(Sequential):
     def __init__(self, num_classes: int):
         if num_classes < 0:
             raise ValueError("VGGClassifier num_classes must be nonnegative.")
@@ -89,10 +90,10 @@ class VGGClassifier(keras.Sequential):
         self._num_classes = num_classes
 
         layers = [
-            keras.layers.Flatten(),
-            keras.layers.Dense(4096, activation="relu"),
-            keras.layers.Dense(4096, activation="relu"),
-            keras.layers.Dense(self.num_classes, activation="softmax"),
+            Flatten(),
+            Dense(4096, activation="relu"),
+            Dense(4096, activation="relu"),
+            Dense(self.num_classes, activation="softmax"),
         ]
 
         super().__init__(layers)

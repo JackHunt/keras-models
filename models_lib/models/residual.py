@@ -30,11 +30,13 @@
 
 import typing
 
-import keras
+from keras import Model, Sequential
+from keras.layers import AveragePooling2D, Conv2D, Dense, MaxPool2D
+
 from models_lib.layers.residual import ResidualBlock
 
 
-class _ResNet(keras.Model):
+class _ResNet(Model):
     def __init__(
         self,
         residual_blocks: typing.List[ResidualBlock],
@@ -44,16 +46,16 @@ class _ResNet(keras.Model):
         super().__init__(**kwargs)
 
         # Initial "input" block.
-        self._initial_block = keras.Sequential(
+        self._initial_block = Sequential(
             [
-                keras.layers.Conv2D(
+                Conv2D(
                     kernel_size=(7, 7),
                     strides=(2, 2),
                     filters=64,
                     padding="same",
                     activation="relu",
                 ),
-                keras.layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2)),
+                MaxPool2D(pool_size=(3, 3), strides=(2, 2)),
             ]
         )
 
@@ -62,15 +64,15 @@ class _ResNet(keras.Model):
             if not isinstance(b, ResidualBlock):
                 raise ValueError("Non ResidualBlock found.")
 
-        self._residual_blocks = keras.Sequential(residual_blocks)
+        self._residual_blocks = Sequential(residual_blocks)
 
         # Output classifier block.
         self._output_block = None
         if num_classes > 0:
-            self._output_block = keras.Sequential(
+            self._output_block = Sequential(
                 [
-                    keras.layers.AveragePooling2D(),
-                    keras.layers.Dense(num_classes, activation="softmax"),
+                    AveragePooling2D(),
+                    Dense(num_classes, activation="softmax"),
                 ]
             )
 
@@ -90,15 +92,15 @@ class _ResNet(keras.Model):
         return config
 
     @property
-    def initial_block(self) -> keras.Sequential:
+    def initial_block(self) -> Sequential:
         return self._initial_block
 
     @property
-    def residual_blocks(self) -> keras.Sequential:
+    def residual_blocks(self) -> Sequential:
         return self._residual_blocks
 
     @property
-    def output_block(self) -> keras.Sequential:
+    def output_block(self) -> Sequential:
         return self._output_block
 
 

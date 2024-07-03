@@ -28,11 +28,21 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import keras
+from keras import Model, Sequential
+from keras.layers import (
+    AveragePooling2D,
+    Conv2D,
+    Dense,
+    Dropout,
+    Flatten,
+    GlobalAveragePooling2D,
+    MaxPool2D,
+)
+
 from models_lib.layers.inception import InceptionBlock
 
 
-class GoogLeNet(keras.Model):
+class GoogLeNet(Model):
     def __init__(
         self,
         num_classes: int,
@@ -57,19 +67,13 @@ class GoogLeNet(keras.Model):
         self._dropout_2 = output_2_dropout
 
         # Block 0.
-        self._block_0 = keras.Sequential(
+        self._block_0 = Sequential(
             [
-                keras.layers.Conv2D(
-                    64, (7, 7), padding="same", strides=(2, 2), activation="relu"
-                ),
-                keras.layers.MaxPool2D((3, 3), padding="same", strides=(2, 2)),
-                keras.layers.Conv2D(
-                    64, (1, 1), padding="same", strides=(1, 1), activation="relu"
-                ),
-                keras.layers.Conv2D(
-                    192, (3, 3), padding="same", strides=(1, 1), activation="relu"
-                ),
-                keras.layers.MaxPool2D((3, 3), padding="same", strides=(2, 2)),
+                Conv2D(64, (7, 7), padding="same", strides=(2, 2), activation="relu"),
+                MaxPool2D((3, 3), padding="same", strides=(2, 2)),
+                Conv2D(64, (1, 1), padding="same", strides=(1, 1), activation="relu"),
+                Conv2D(192, (3, 3), padding="same", strides=(1, 1), activation="relu"),
+                MaxPool2D((3, 3), padding="same", strides=(2, 2)),
                 InceptionBlock(
                     64,
                     128,
@@ -88,7 +92,7 @@ class GoogLeNet(keras.Model):
                     max_pool=True,
                     num_filters_max_pool_dim_reduce=64,
                 ),
-                keras.layers.MaxPool2D((3, 3), padding="same", strides=(2, 2)),
+                MaxPool2D((3, 3), padding="same", strides=(2, 2)),
                 InceptionBlock(
                     192,
                     208,
@@ -103,16 +107,14 @@ class GoogLeNet(keras.Model):
 
         # Output Block 0.
         self._output_block_0 = (
-            keras.Sequential(
+            Sequential(
                 [
-                    keras.layers.AveragePooling2D(
-                        (5, 5), strides=(3, 3), padding="same"
-                    ),
-                    keras.layers.Conv2D(128, (1, 1), padding="same", activation="relu"),
-                    keras.layers.Flatten(),
-                    keras.layers.Dense(1024, activation="relu"),
-                    keras.layers.Dropout(self.output_0_dropout),
-                    keras.layers.Dense(self.num_classes, activation="softmax"),
+                    AveragePooling2D((5, 5), strides=(3, 3), padding="same"),
+                    Conv2D(128, (1, 1), padding="same", activation="relu"),
+                    Flatten(),
+                    Dense(1024, activation="relu"),
+                    Dropout(self.output_0_dropout),
+                    Dense(self.num_classes, activation="softmax"),
                 ]
             )
             if self.num_classes
@@ -120,7 +122,7 @@ class GoogLeNet(keras.Model):
         )
 
         # Block 1.
-        self._block_1 = keras.Sequential(
+        self._block_1 = Sequential(
             [
                 InceptionBlock(
                     160,
@@ -154,16 +156,14 @@ class GoogLeNet(keras.Model):
 
         # Output Block 1.
         self._output_block_1 = (
-            keras.Sequential(
+            Sequential(
                 [
-                    keras.layers.AveragePooling2D(
-                        (5, 5), strides=(3, 3), padding="same"
-                    ),
-                    keras.layers.Conv2D(128, (1, 1), padding="same", activation="relu"),
-                    keras.layers.Flatten(),
-                    keras.layers.Dense(1024, activation="relu"),
-                    keras.layers.Dropout(self.output_1_dropout),
-                    keras.layers.Dense(self.num_classes, activation="softmax"),
+                    AveragePooling2D((5, 5), strides=(3, 3), padding="same"),
+                    Conv2D(128, (1, 1), padding="same", activation="relu"),
+                    Flatten(),
+                    Dense(1024, activation="relu"),
+                    Dropout(self.output_1_dropout),
+                    Dense(self.num_classes, activation="softmax"),
                 ]
             )
             if self.num_classes
@@ -171,7 +171,7 @@ class GoogLeNet(keras.Model):
         )
 
         # Block 2.
-        self._block_2 = keras.Sequential(
+        self._block_2 = Sequential(
             [
                 InceptionBlock(
                     256,
@@ -182,7 +182,7 @@ class GoogLeNet(keras.Model):
                     max_pool=True,
                     num_filters_max_pool_dim_reduce=128,
                 ),
-                keras.layers.MaxPool2D((3, 3), padding="same", strides=(2, 2)),
+                MaxPool2D((3, 3), padding="same", strides=(2, 2)),
                 InceptionBlock(
                     384,
                     384,
@@ -197,11 +197,11 @@ class GoogLeNet(keras.Model):
 
         # Output Block 2.
         self._output_block_2 = (
-            keras.Sequential(
+            Sequential(
                 [
-                    keras.layers.GlobalAveragePooling2D(),
-                    keras.layers.Dropout(self.output_2_dropout),
-                    keras.layers.Dense(self.num_classes, activation="softmax"),
+                    GlobalAveragePooling2D(),
+                    Dropout(self.output_2_dropout),
+                    Dense(self.num_classes, activation="softmax"),
                 ]
             )
             if self.num_classes
@@ -257,25 +257,25 @@ class GoogLeNet(keras.Model):
         return self._dropout_2
 
     @property
-    def block_0(self) -> keras.Sequential:
+    def block_0(self) -> Sequential:
         return self._block_0
 
     @property
-    def output_block_0(self) -> keras.Sequential:
+    def output_block_0(self) -> Sequential:
         return self._output_block_0
 
     @property
-    def block_1(self) -> keras.Sequential:
+    def block_1(self) -> Sequential:
         return self._block_1
 
     @property
-    def output_block_1(self) -> keras.Sequential:
+    def output_block_1(self) -> Sequential:
         return self._output_block_1
 
     @property
-    def block_2(self) -> keras.Sequential:
+    def block_2(self) -> Sequential:
         return self._block_2
 
     @property
-    def output_block_2(self) -> keras.Sequential:
+    def output_block_2(self) -> Sequential:
         return self._output_block_2
