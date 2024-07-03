@@ -30,7 +30,6 @@
 
 import keras
 from models_lib.layers.inception import InceptionBlock
-from models_lib.layers.utils.sequential import SequentialLayer
 
 
 class GoogLeNet(keras.Model):
@@ -58,7 +57,7 @@ class GoogLeNet(keras.Model):
         self._dropout_2 = output_2_dropout
 
         # Block 0.
-        self._block_0 = SequentialLayer(
+        self._block_0 = keras.Sequential(
             [
                 keras.layers.Conv2D(
                     64, (7, 7), padding="same", strides=(2, 2), activation="relu"
@@ -104,7 +103,7 @@ class GoogLeNet(keras.Model):
 
         # Output Block 0.
         self._output_block_0 = (
-            SequentialLayer(
+            keras.Sequential(
                 [
                     keras.layers.AveragePooling2D(
                         (5, 5), strides=(3, 3), padding="same"
@@ -121,7 +120,7 @@ class GoogLeNet(keras.Model):
         )
 
         # Block 1.
-        self._block_1 = SequentialLayer(
+        self._block_1 = keras.Sequential(
             [
                 InceptionBlock(
                     160,
@@ -155,7 +154,7 @@ class GoogLeNet(keras.Model):
 
         # Output Block 1.
         self._output_block_1 = (
-            SequentialLayer(
+            keras.Sequential(
                 [
                     keras.layers.AveragePooling2D(
                         (5, 5), strides=(3, 3), padding="same"
@@ -172,7 +171,7 @@ class GoogLeNet(keras.Model):
         )
 
         # Block 2.
-        self._block_2 = SequentialLayer(
+        self._block_2 = keras.Sequential(
             [
                 InceptionBlock(
                     256,
@@ -198,7 +197,7 @@ class GoogLeNet(keras.Model):
 
         # Output Block 2.
         self._output_block_2 = (
-            SequentialLayer(
+            keras.Sequential(
                 [
                     keras.layers.GlobalAveragePooling2D(),
                     keras.layers.Dropout(self.output_2_dropout),
@@ -258,25 +257,25 @@ class GoogLeNet(keras.Model):
         return self._dropout_2
 
     @property
-    def block_0(self) -> SequentialLayer:
+    def block_0(self) -> keras.Sequential:
         return self._block_0
 
     @property
-    def output_block_0(self) -> SequentialLayer:
+    def output_block_0(self) -> keras.Sequential:
         return self._output_block_0
 
     @property
-    def block_1(self) -> SequentialLayer:
+    def block_1(self) -> keras.Sequential:
         return self._block_1
 
     @property
-    def output_block_1(self) -> SequentialLayer:
+    def output_block_1(self) -> keras.Sequential:
         return self._output_block_1
 
     @property
-    def block_2(self) -> SequentialLayer:
+    def block_2(self) -> keras.Sequential:
         return self._block_2
 
     @property
-    def output_block_2(self) -> SequentialLayer:
+    def output_block_2(self) -> keras.Sequential:
         return self._output_block_2

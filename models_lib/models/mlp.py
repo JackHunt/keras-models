@@ -31,7 +31,6 @@
 from typing import List, Tuple, Union
 
 import keras
-from models_lib.layers.utils.sequential import SequentialLayer
 
 
 class MLP(keras.Model):
@@ -57,7 +56,7 @@ class MLP(keras.Model):
                     "All hidden layer sizes must be greater than or equal to one."
                 )
 
-            self._hidden = SequentialLayer(
+            self._hidden = keras.Sequential(
                 [
                     keras.layers.Dense(n, activation=self.hidden_activation)
                     for n in self.hidden_sizes
@@ -111,7 +110,7 @@ class MLP(keras.Model):
         return self._output_activation
 
     @property
-    def hidden_layers(self) -> SequentialLayer:
+    def hidden_layers(self) -> keras.Sequential:
         return self._hidden
 
     @property

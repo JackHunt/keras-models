@@ -29,10 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import keras
-from models_lib.layers.utils.sequential import SequentialLayer
 
 
-class VGGBlock(SequentialLayer):
+class VGGBlock(keras.Sequential):
     def __init__(self, num_convolutions: int, num_filters: int):
         self._num_convolutions = num_convolutions
         if self.num_convolutions < 1:
@@ -82,7 +81,7 @@ class VGGBlock(SequentialLayer):
         return self._num_filters
 
 
-class VGGClassifier(SequentialLayer):
+class VGGClassifier(keras.Sequential):
     def __init__(self, num_classes: int):
         if num_classes < 0:
             raise ValueError("VGGClassifier num_classes must be nonnegative.")

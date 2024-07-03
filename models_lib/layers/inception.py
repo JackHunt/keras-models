@@ -32,8 +32,6 @@ import keras
 
 import tensorflow as tf
 
-from models_lib.layers.utils.sequential import SequentialLayer
-
 
 class InceptionBlock(keras.layers.Layer):
     def __init__(
@@ -62,7 +60,7 @@ class InceptionBlock(keras.layers.Layer):
                 self.num_filters_1x1, (1, 1), padding="same", activation="relu"
             )
         ]
-        self._branch_0 = SequentialLayer(branch_0_layers)
+        self._branch_0 = keras.Sequential(branch_0_layers)
 
         # 3x3 conv.
         branch_1_layers = [
@@ -80,7 +78,7 @@ class InceptionBlock(keras.layers.Layer):
                     activation="relu",
                 ),
             )
-        self._branch_1 = SequentialLayer(branch_1_layers)
+        self._branch_1 = keras.Sequential(branch_1_layers)
 
         # 5x5 conv.
         branch_2_layers = [
@@ -98,7 +96,7 @@ class InceptionBlock(keras.layers.Layer):
                     activation="relu",
                 ),
             )
-        self._branch_2 = SequentialLayer(branch_2_layers)
+        self._branch_2 = keras.Sequential(branch_2_layers)
 
         # Max Pool & 1x1 branch.
         self._branch_3 = None
@@ -116,7 +114,7 @@ class InceptionBlock(keras.layers.Layer):
                         activation="relu",
                     ),
                 )
-            self._branch_3 = SequentialLayer(branch_3_layers)
+            self._branch_3 = keras.Sequential(branch_3_layers)
 
     def call(self, inputs):
         b0_out = self._branch_0(inputs)

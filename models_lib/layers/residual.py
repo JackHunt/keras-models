@@ -32,7 +32,6 @@ import typing
 
 import tensorflow as tf
 import keras
-from models_lib.layers.utils import sequential
 
 
 class ResidualBlock(keras.layers.Layer):
@@ -74,7 +73,7 @@ class ResidualBlock(keras.layers.Layer):
         self._shortcut_conv_depth = shortcut_conv_depth
         self._downsampling = self.shortcut_conv_depth > 0
 
-        self._conv = sequential.SequentialLayer(
+        self._conv = keras.Sequential(
             [
                 keras.layers.Conv2D(
                     kernel_size=self.kernel_size,

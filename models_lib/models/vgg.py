@@ -32,7 +32,6 @@ import typing
 
 import keras
 from models_lib.layers.vgg import VGGBlock, VGGClassifier
-from models_lib.layers.utils.sequential import SequentialLayer
 
 
 class _VGGNet(keras.Model):
@@ -45,7 +44,7 @@ class _VGGNet(keras.Model):
             if not isinstance(b, VGGBlock):
                 raise ValueError("Non VGGBlock found.")
 
-        self._vgg_blocks = SequentialLayer(vgg_blocks)
+        self._vgg_blocks = keras.Sequential(vgg_blocks)
 
         self._classifier_block = None
         if num_classes > 0:
@@ -68,7 +67,7 @@ class _VGGNet(keras.Model):
         return config
 
     @property
-    def vgg_blocks(self) -> SequentialLayer:
+    def vgg_blocks(self) -> keras.Sequential:
         return self._vgg_blocks
 
     @property

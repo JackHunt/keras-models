@@ -32,7 +32,6 @@ import typing
 
 import keras
 from models_lib.layers.residual import ResidualBlock
-from models_lib.layers.utils.sequential import SequentialLayer
 
 
 class _ResNet(keras.Model):
@@ -45,7 +44,7 @@ class _ResNet(keras.Model):
         super().__init__(**kwargs)
 
         # Initial "input" block.
-        self._initial_block = SequentialLayer(
+        self._initial_block = keras.Sequential(
             [
                 keras.layers.Conv2D(
                     kernel_size=(7, 7),
@@ -63,12 +62,12 @@ class _ResNet(keras.Model):
             if not isinstance(b, ResidualBlock):
                 raise ValueError("Non ResidualBlock found.")
 
-        self._residual_blocks = SequentialLayer(residual_blocks)
+        self._residual_blocks = keras.Sequential(residual_blocks)
 
         # Output classifier block.
         self._output_block = None
         if num_classes > 0:
-            self._output_block = SequentialLayer(
+            self._output_block = keras.Sequential(
                 [
                     keras.layers.AveragePooling2D(),
                     keras.layers.Dense(num_classes, activation="softmax"),
@@ -91,15 +90,15 @@ class _ResNet(keras.Model):
         return config
 
     @property
-    def initial_block(self) -> SequentialLayer:
+    def initial_block(self) -> keras.Sequential:
         return self._initial_block
 
     @property
-    def residual_blocks(self) -> SequentialLayer:
+    def residual_blocks(self) -> keras.Sequential:
         return self._residual_blocks
 
     @property
-    def output_block(self) -> SequentialLayer:
+    def output_block(self) -> keras.Sequential:
         return self._output_block
 
 
