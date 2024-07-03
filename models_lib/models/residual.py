@@ -34,22 +34,29 @@ import keras
 from models_lib.layers.residual import ResidualBlock
 from models_lib.layers.utils.sequential import SequentialLayer
 
+
 class _ResNet(keras.Model):
-    def __init__(self,
-                 residual_blocks: typing.List[ResidualBlock],
-                 num_classes: int = 0,
-                 **kwargs):
+    def __init__(
+        self,
+        residual_blocks: typing.List[ResidualBlock],
+        num_classes: int = 0,
+        **kwargs
+    ):
         super().__init__(**kwargs)
 
         # Initial "input" block.
-        self._initial_block = SequentialLayer([
-            keras.layers.Conv2D(kernel_size=(7, 7),
-                                strides=(2, 2),
-                                filters=64,
-                                padding='same',
-                                activation='relu'),
-            keras.layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2))
-        ])
+        self._initial_block = SequentialLayer(
+            [
+                keras.layers.Conv2D(
+                    kernel_size=(7, 7),
+                    strides=(2, 2),
+                    filters=64,
+                    padding="same",
+                    activation="relu",
+                ),
+                keras.layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2)),
+            ]
+        )
 
         # Residual layers.
         for b in residual_blocks:
@@ -61,10 +68,12 @@ class _ResNet(keras.Model):
         # Output classifier block.
         self._output_block = None
         if num_classes > 0:
-            self._output_block = SequentialLayer([
-                keras.layers.AveragePooling2D(),
-                keras.layers.Dense(num_classes, activation='softmax'),
-        ])
+            self._output_block = SequentialLayer(
+                [
+                    keras.layers.AveragePooling2D(),
+                    keras.layers.Dense(num_classes, activation="softmax"),
+                ]
+            )
 
     def call(self, inputs):
         y = self.initial_block(inputs)
@@ -76,10 +85,9 @@ class _ResNet(keras.Model):
 
     def get_config(self):
         config = super().get_config()
-        config.update({
-            'residual_blocks': self.residual_blocks,
-            'num_classes': self.num_classes
-        })
+        config.update(
+            {"residual_blocks": self.residual_blocks, "num_classes": self.num_classes}
+        )
         return config
 
     @property
@@ -94,31 +102,30 @@ class _ResNet(keras.Model):
     def output_block(self) -> SequentialLayer:
         return self._output_block
 
+
 class ResNet18(_ResNet):
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
-        blocks += [
-            ResidualBlock((3,3), 64) for _ in range(2)
-        ]
+        blocks += [ResidualBlock((3, 3), 64) for _ in range(2)]
 
         # Block 1.
         blocks += [
-            ResidualBlock((3,3), 128, shortcut_conv_depth=128),
-            ResidualBlock((3,3), 128)
+            ResidualBlock((3, 3), 128, shortcut_conv_depth=128),
+            ResidualBlock((3, 3), 128),
         ]
 
         # Block 2.
         blocks += [
-            ResidualBlock((3,3), 256, shortcut_conv_depth=256),
-            ResidualBlock((3,3), 256)
+            ResidualBlock((3, 3), 256, shortcut_conv_depth=256),
+            ResidualBlock((3, 3), 256),
         ]
 
         # Block 3.
         blocks += [
-            ResidualBlock((3,3), 512, shortcut_conv_depth=512),
-            ResidualBlock((3,3), 512)
+            ResidualBlock((3, 3), 512, shortcut_conv_depth=512),
+            ResidualBlock((3, 3), 512),
         ]
 
         super().__init__(blocks, **kwargs)
@@ -127,35 +134,25 @@ class ResNet18(_ResNet):
     def from_config(cls, config):
         return ResNet18(**config)
 
+
 class ResNet34(_ResNet):
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
-        blocks += [
-            ResidualBlock((3, 3), 64) for _ in range(3)
-        ]
+        blocks += [ResidualBlock((3, 3), 64) for _ in range(3)]
 
         # Block 1.
-        blocks.append(
-            ResidualBlock((3, 3), 128, shortcut_conv_depth=128))
-        blocks += [
-            ResidualBlock((3, 3), 128) for _ in range(3)
-        ]
+        blocks.append(ResidualBlock((3, 3), 128, shortcut_conv_depth=128))
+        blocks += [ResidualBlock((3, 3), 128) for _ in range(3)]
 
         # Block 2.
-        blocks.append(
-            ResidualBlock((3, 3), 256, shortcut_conv_depth=256))
-        blocks += [
-            ResidualBlock((3, 3), 256) for _ in range(5)
-        ]
+        blocks.append(ResidualBlock((3, 3), 256, shortcut_conv_depth=256))
+        blocks += [ResidualBlock((3, 3), 256) for _ in range(5)]
 
         # Block 3.
-        blocks.append(
-            ResidualBlock((3, 3), 512, shortcut_conv_depth=512))
-        blocks += [
-            ResidualBlock((3, 3), 512) for _ in range(2)
-        ]
+        blocks.append(ResidualBlock((3, 3), 512, shortcut_conv_depth=512))
+        blocks += [ResidualBlock((3, 3), 512) for _ in range(2)]
 
         super().__init__(blocks, **kwargs)
 
@@ -163,31 +160,30 @@ class ResNet34(_ResNet):
     def from_config(cls, config):
         return ResNet34(**config)
 
+
 class ResNet50(_ResNet):
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
-        blocks += [
-            ResidualBlock((3, 3), 64) for _ in range(2)
-        ]
+        blocks += [ResidualBlock((3, 3), 64) for _ in range(2)]
 
         # Block 1.
         blocks += [
             ResidualBlock((3, 3), 128, shortcut_conv_depth=128),
-            ResidualBlock((3, 3), 128)
+            ResidualBlock((3, 3), 128),
         ]
 
         # Block 2.
         blocks += [
             ResidualBlock((3, 3), 256, shortcut_conv_depth=256),
-            ResidualBlock((3, 3), 256)
+            ResidualBlock((3, 3), 256),
         ]
 
         # Block 3.
         blocks += [
             ResidualBlock((3, 3), 512, shortcut_conv_depth=512),
-            ResidualBlock((3, 3), 512)
+            ResidualBlock((3, 3), 512),
         ]
 
         super().__init__(blocks, **kwargs)
@@ -196,41 +192,34 @@ class ResNet50(_ResNet):
     def from_config(cls, config):
         return ResNet50(**config)
 
+
 class ResNet101(_ResNet):
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
-        blocks.append(ResidualBlock(
-            (1, 1), 64, kernel_size_b=(3, 3), shortcut_conv_depth=64))
-        blocks += [
-            ResidualBlock(
-                (1, 1), 64, kernel_size_b=(3, 3)) for _ in range(2)
-        ]
+        blocks.append(
+            ResidualBlock((1, 1), 64, kernel_size_b=(3, 3), shortcut_conv_depth=64)
+        )
+        blocks += [ResidualBlock((1, 1), 64, kernel_size_b=(3, 3)) for _ in range(2)]
 
         # Block 1.
-        blocks.append(ResidualBlock(
-            (1, 1), 128, kernel_size_b=(3, 3), shortcut_conv_depth=128))
-        blocks += [
-            ResidualBlock(
-                (1, 1), 128, kernel_size_b=(3, 3)) for _ in range(3)
-        ]
+        blocks.append(
+            ResidualBlock((1, 1), 128, kernel_size_b=(3, 3), shortcut_conv_depth=128)
+        )
+        blocks += [ResidualBlock((1, 1), 128, kernel_size_b=(3, 3)) for _ in range(3)]
 
         # Block 2.
-        blocks.append(ResidualBlock(
-            (1, 1), 256, kernel_size_b=(3, 3), shortcut_conv_depth=256))
-        blocks += [
-            ResidualBlock(
-                (1, 1), 256, kernel_size_b=(3, 3)) for _ in range(22)
-        ]
+        blocks.append(
+            ResidualBlock((1, 1), 256, kernel_size_b=(3, 3), shortcut_conv_depth=256)
+        )
+        blocks += [ResidualBlock((1, 1), 256, kernel_size_b=(3, 3)) for _ in range(22)]
 
         # Block 3.
-        blocks.append(ResidualBlock(
-            (1, 1), 512, kernel_size_b=(3, 3), shortcut_conv_depth=512))
-        blocks += [
-            ResidualBlock(
-                (1, 1), 512, kernel_size_b=(3, 3)) for _ in range(2)
-        ]
+        blocks.append(
+            ResidualBlock((1, 1), 512, kernel_size_b=(3, 3), shortcut_conv_depth=512)
+        )
+        blocks += [ResidualBlock((1, 1), 512, kernel_size_b=(3, 3)) for _ in range(2)]
 
         super().__init__(blocks, **kwargs)
 
@@ -238,41 +227,34 @@ class ResNet101(_ResNet):
     def from_config(cls, config):
         return ResNet101(**config)
 
+
 class ResNet152(_ResNet):
     def __init__(self, **kwargs):
         blocks = []
 
         # Block 0.
-        blocks.append(ResidualBlock(
-            (1, 1), 64, kernel_size_b=(3, 3), shortcut_conv_depth=64))
-        blocks += [
-            ResidualBlock(
-                (1, 1), 64, kernel_size_b=(3, 3)) for _ in range(2)
-        ]
+        blocks.append(
+            ResidualBlock((1, 1), 64, kernel_size_b=(3, 3), shortcut_conv_depth=64)
+        )
+        blocks += [ResidualBlock((1, 1), 64, kernel_size_b=(3, 3)) for _ in range(2)]
 
         # Block 1.
-        blocks.append(ResidualBlock(
-            (1, 1), 128, kernel_size_b=(3, 3), shortcut_conv_depth=128))
-        blocks += [
-            ResidualBlock(
-                (1, 1), 128, kernel_size_b=(3, 3)) for _ in range(7)
-        ]
+        blocks.append(
+            ResidualBlock((1, 1), 128, kernel_size_b=(3, 3), shortcut_conv_depth=128)
+        )
+        blocks += [ResidualBlock((1, 1), 128, kernel_size_b=(3, 3)) for _ in range(7)]
 
         # Block 2.
-        blocks.append(ResidualBlock(
-            (1, 1), 256, kernel_size_b=(3, 3), shortcut_conv_depth=256))
-        blocks += [
-            ResidualBlock(
-                (1, 1), 256, kernel_size_b=(3, 3)) for _ in range(35)
-        ]
+        blocks.append(
+            ResidualBlock((1, 1), 256, kernel_size_b=(3, 3), shortcut_conv_depth=256)
+        )
+        blocks += [ResidualBlock((1, 1), 256, kernel_size_b=(3, 3)) for _ in range(35)]
 
         # Block 3.
-        blocks.append(ResidualBlock(
-            (1, 1), 512, kernel_size_b=(3, 3), shortcut_conv_depth=512))
-        blocks += [
-            ResidualBlock(
-                (1, 1), 512, kernel_size_b=(3, 3)) for _ in range(2)
-        ]
+        blocks.append(
+            ResidualBlock((1, 1), 512, kernel_size_b=(3, 3), shortcut_conv_depth=512)
+        )
+        blocks += [ResidualBlock((1, 1), 512, kernel_size_b=(3, 3)) for _ in range(2)]
 
         super().__init__(blocks, **kwargs)
 
@@ -280,8 +262,10 @@ class ResNet152(_ResNet):
     def from_config(cls, config):
         return ResNet152(**config)
 
-def resnet(arch: int = 18, num_classes: int = 0) -> typing.Union[
-    ResNet18, ResNet34, ResNet50, ResNet101, ResNet152]:
+
+def resnet(
+    arch: int = 18, num_classes: int = 0
+) -> typing.Union[ResNet18, ResNet34, ResNet50, ResNet101, ResNet152]:
     if arch == 18:
         return ResNet18(num_classes=num_classes)
 

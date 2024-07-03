@@ -34,12 +34,15 @@ import tensorflow as tf
 import keras
 from models_lib.layers.utils import sequential
 
+
 class ResidualBlock(keras.layers.Layer):
-    def __init__(self,
-                 kernel_size: typing.Union[int, typing.Tuple[int, int]],
-                 num_filters: int,
-                 shortcut_conv_depth: int = 0,
-                 kernel_size_b: typing.Union[int, typing.Tuple[int, int]] = None):
+    def __init__(
+        self,
+        kernel_size: typing.Union[int, typing.Tuple[int, int]],
+        num_filters: int,
+        shortcut_conv_depth: int = 0,
+        kernel_size_b: typing.Union[int, typing.Tuple[int, int]] = None,
+    ):
         super().__init__()
 
         if isinstance(kernel_size, int):
@@ -47,47 +50,58 @@ class ResidualBlock(keras.layers.Layer):
         self._kernel_size = kernel_size
         if self.kernel_size[0] < 1 or self.kernel_size[1] < 1:
             raise ValueError(
-                "ResidualBlock kernel_size must be greater than or equal to one in each dimension.")
+                "ResidualBlock kernel_size must be greater than or equal to one in each dimension."
+            )
 
         self._kernel_size_b = kernel_size_b
         if self.kernel_size_b is not None and isinstance(self.kernel_size_b, int):
             self._kernel_size_b = (self.kernel_size_b, self.kernel_size_b)
-    
+
         if self.kernel_size_b:
             if self.kernel_size_b[0] < 1 or self.kernel_size_b[1] < 1:
                 raise ValueError(
-                    "ResidualBlock kernel_size_b must be greater than or equal to one in each dimension.")
+                    "ResidualBlock kernel_size_b must be greater than or equal to one in each dimension."
+                )
         else:
             self._kernel_size_b = self.kernel_size
 
         self._num_filters = num_filters
         if self._num_filters < 1:
             raise ValueError(
-                "ResidualBlock num_filters must be greater than or equal to one.")
+                "ResidualBlock num_filters must be greater than or equal to one."
+            )
 
         self._shortcut_conv_depth = shortcut_conv_depth
         self._downsampling = self.shortcut_conv_depth > 0
 
-        self._conv = sequential.SequentialLayer([
-            keras.layers.Conv2D(kernel_size=self.kernel_size,
-                                strides=(2, 2) if self.downsampling else (1, 1),
-                                filters=self.num_filters,
-                                padding='same',
-                                activation='relu'),
-            keras.layers.BatchNormalization(),
-            keras.layers.Conv2D(kernel_size=self.kernel_size_b,
-                                strides=(1, 1),
-                                filters=self.num_filters,
-                                padding='same',
-                                activation='relu')
-        ])
+        self._conv = sequential.SequentialLayer(
+            [
+                keras.layers.Conv2D(
+                    kernel_size=self.kernel_size,
+                    strides=(2, 2) if self.downsampling else (1, 1),
+                    filters=self.num_filters,
+                    padding="same",
+                    activation="relu",
+                ),
+                keras.layers.BatchNormalization(),
+                keras.layers.Conv2D(
+                    kernel_size=self.kernel_size_b,
+                    strides=(1, 1),
+                    filters=self.num_filters,
+                    padding="same",
+                    activation="relu",
+                ),
+            ]
+        )
 
         if self.downsampling:
-            self._ds = keras.layers.Conv2D(kernel_size=1,
-                                           strides=2,
-                                           filters=self.shortcut_conv_depth,
-                                           padding='same',
-                                           activation='relu')
+            self._ds = keras.layers.Conv2D(
+                kernel_size=1,
+                strides=2,
+                filters=self.shortcut_conv_depth,
+                padding="same",
+                activation="relu",
+            )
 
         self._bn = keras.layers.BatchNormalization()
 
@@ -97,19 +111,21 @@ class ResidualBlock(keras.layers.Layer):
         residual = inputs
         if self.downsampling:
             residual = self._ds(residual)
-    
+
         y = keras.layers.Add()([y, residual])
         y = keras.layers.ReLU()(y)
         return self._bn(y)
 
     def get_config(self):
         config = super().get_config()
-        config.update({
-            'kernel_size': self._kernel_size,
-            'num_filters': self._num_filters,
-            'shortcut_conv_depth': self._shortcut_conv_depth,
-            'kernel_size_b': self._kernel_size_b,
-        })
+        config.update(
+            {
+                "kernel_size": self._kernel_size,
+                "num_filters": self._num_filters,
+                "shortcut_conv_depth": self._shortcut_conv_depth,
+                "kernel_size_b": self._kernel_size_b,
+            }
+        )
         return config
 
     @classmethod

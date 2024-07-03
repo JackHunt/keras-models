@@ -44,93 +44,97 @@ from model_factory import create_model
 
 from models_lib.utils.data import split_dataset
 
+
 def get_optimiser(config: Dict) -> keras.optimizers.Optimizer:
-  opt_type = config['type'].lower()
-  opt_spec = config['spec']
+    opt_type = config["type"].lower()
+    opt_spec = config["spec"]
 
-  if opt_type == "sgd":
-    return keras.optimizers.SGD(**opt_spec)
+    if opt_type == "sgd":
+        return keras.optimizers.SGD(**opt_spec)
 
-  if opt_type == "adam":
-    return keras.optimizers.Adam(**opt_spec)
+    if opt_type == "adam":
+        return keras.optimizers.Adam(**opt_spec)
 
-  raise ValueError(f"Unknown optimiser: {config['type']}")
+    raise ValueError(f"Unknown optimiser: {config['type']}")
+
 
 def get_callbacks(out_dir: str) -> None:
-  callbacks = []
+    callbacks = []
 
-  if use_tensorboard:
-    callbacks += [
-      keras.callbacks.TensorBoard(log_dir=Path(out_dir, "tensorboard"))
-    ]
+    if use_tensorboard:
+        callbacks += [keras.callbacks.TensorBoard(log_dir=Path(out_dir, "tensorboard"))]
 
-  if use_wandb:
-    callbacks += [
-      WandbMetricsLogger(log_freq=5),
-      # WandbModelCheckpoint(filepath=Path(out_dir, "models"))
-    ]
+    if use_wandb:
+        callbacks += [
+            WandbMetricsLogger(log_freq=5),
+            # WandbModelCheckpoint(filepath=Path(out_dir, "models"))
+        ]
 
-  return callbacks
+    return callbacks
 
-def train(config: Dict,
-          out_dir: str) -> Tuple[keras.callbacks.History, keras.Model]:
-  train_config = config['training']
 
-  model = create_model(config['architecture'])
-  model.compile(optimizer=get_optimiser(train_config['optimiser']),
-                loss=train_config['losses'],
-                loss_weights=train_config['loss_weights'],
-                metrics=train_config['metrics'])
+def train(config: Dict, out_dir: str) -> Tuple[keras.callbacks.History, keras.Model]:
+    train_config = config["training"]
 
-  ds = create_dataset(config['dataset'])
-  if type(ds) == tuple:
-    if 'val_split' in train_config:
-      raise ValueError(
-        "val_split cannot be specified when using an already split tfds.")
-
-    train_ds, val_ds = ds
-  else:
-    if not 'val_split' in train_config:
-      raise ValueError(
-        "val_split must be specified when using a non split tfds.")
-
-    val_split = train_config['val_split']
-
-    train_ds, val_ds = split_dataset(ds, val_split)
-
-  model.summary()
-
-  history = model.fit(train_ds,
-                      epochs=train_config['epochs'],
-                      callbacks=get_callbacks(out_dir),
-                      validation_data=val_ds)
-
-  return history, model
-
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Train a network from a config.")
-  parser.add_argument("config_file", type=str)
-  parser.add_argument("--artifact_dir", type=str, default=None)
-  parser.add_argument('--wandb', default=False, action=argparse.BooleanOptionalAction)
-  parser.add_argument('--tensorboard', default=False, action=argparse.BooleanOptionalAction)
-
-  args = parser.parse_args()
-
-  use_wandb = args.wandb
-  use_tensorboard = args.tensorboard
-
-  with open(args.config_file, 'r') as f:
-    config = yaml.safe_load(f)
-
-  out_dir = args.artifact_dir if args.artifact_dir else "."
-
-  if use_wandb:
-    wandb.init(
-      project=config['wandb_project'],
-      config=config
+    model = create_model(config["architecture"])
+    model.compile(
+        optimizer=get_optimiser(train_config["optimiser"]),
+        loss=train_config["losses"],
+        loss_weights=train_config["loss_weights"],
+        metrics=train_config["metrics"],
     )
 
-  keras_history, model = train(config, out_dir)
+    ds = create_dataset(config["dataset"])
+    if type(ds) == tuple:
+        if "val_split" in train_config:
+            raise ValueError(
+                "val_split cannot be specified when using an already split tfds."
+            )
 
-  if use_wandb:
-    wandb.finish()
+        train_ds, val_ds = ds
+    else:
+        if not "val_split" in train_config:
+            raise ValueError("val_split must be specified when using a non split tfds.")
+
+        val_split = train_config["val_split"]
+
+        train_ds, val_ds = split_dataset(ds, val_split)
+
+    model.summary()
+
+    history = model.fit(
+        train_ds,
+        epochs=train_config["epochs"],
+        callbacks=get_callbacks(out_dir),
+        validation_data=val_ds,
+    )
+
+    return history, model
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train a network from a config.")
+    parser.add_argument("config_file", type=str)
+    parser.add_argument("--artifact_dir", type=str, default=None)
+    parser.add_argument("--wandb", default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "--tensorboard", default=False, action=argparse.BooleanOptionalAction
+    )
+
+    args = parser.parse_args()
+
+    use_wandb = args.wandb
+    use_tensorboard = args.tensorboard
+
+    with open(args.config_file, "r") as f:
+        config = yaml.safe_load(f)
+
+    out_dir = args.artifact_dir if args.artifact_dir else "."
+
+    if use_wandb:
+        wandb.init(project=config["wandb_project"], config=config)
+
+    keras_history, model = train(config, out_dir)
+
+    if use_wandb:
+        wandb.finish()

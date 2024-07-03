@@ -37,50 +37,57 @@ from models_lib.models.mlp import MLP
 from models_lib.models.residual import resnet, _ResNet
 from models_lib.models.vgg import vgg, _VGGNet
 
+
 def create_mlp(spec: Dict) -> MLP:
-  return MLP(**spec)
+    return MLP(**spec)
+
 
 def create_resnet(spec: Dict) -> Union[_ResNet, keras.Sequential]:
-  resnet_arch = spec['arch']
-  if not resnet_arch in (18, 34, 50, 101, 152): # TODO: Does this need moving?
-    raise ValueError(f"Invalid Resnet architecture: {resnet_arch}.")
+    resnet_arch = spec["arch"]
+    if not resnet_arch in (18, 34, 50, 101, 152):  # TODO: Does this need moving?
+        raise ValueError(f"Invalid Resnet architecture: {resnet_arch}.")
 
-  num_classes = spec['num_classes']
-  if not num_classes:
-    return resnet(resnet_size)
+    num_classes = spec["num_classes"]
+    if not num_classes:
+        return resnet(resnet_size)
 
-  assert num_classes > 0
+    assert num_classes > 0
 
-  return keras.Sequential([
-    resnet(resnet_arch),
-    keras.layers.Flatten(),
-    keras.layers.Dense(num_classes) # TODO: Replace with MLP class & softmax
-  ])
+    return keras.Sequential(
+        [
+            resnet(resnet_arch),
+            keras.layers.Flatten(),
+            keras.layers.Dense(num_classes),  # TODO: Replace with MLP class & softmax
+        ]
+    )
+
 
 def create_vgg(spec: Dict) -> _VGGNet:
-  vgg_arch = spec['arch']
-  if not vgg_arch in (11, 13, 16, 19):
-    raise ValueError(f"Invalid VGG architecture: {vgg_arch}.")
+    vgg_arch = spec["arch"]
+    if not vgg_arch in (11, 13, 16, 19):
+        raise ValueError(f"Invalid VGG architecture: {vgg_arch}.")
 
-  return vgg(**spec)
+    return vgg(**spec)
+
 
 def create_googlenet(spec: Dict) -> GoogLeNet:
-  return GoogLeNet(**spec)
+    return GoogLeNet(**spec)
+
 
 def create_model(architecture: Dict) -> keras.Model:
-  arch_type = architecture['arch_type'].lower()
-  spec = architecture['spec']
+    arch_type = architecture["arch_type"].lower()
+    spec = architecture["spec"]
 
-  if arch_type == "mlp":
-    return create_mlp(spec)
+    if arch_type == "mlp":
+        return create_mlp(spec)
 
-  if arch_type == "resnet":
-    return create_resnet(spec)
+    if arch_type == "resnet":
+        return create_resnet(spec)
 
-  if arch_type == "vgg":
-    return create_vgg(spec)
+    if arch_type == "vgg":
+        return create_vgg(spec)
 
-  if arch_type == "googlenet":
-    return create_googlenet(spec)
+    if arch_type == "googlenet":
+        return create_googlenet(spec)
 
-  raise ValueError(f"Model type {arch_type} is invalid.")
+    raise ValueError(f"Model type {arch_type} is invalid.")

@@ -32,34 +32,33 @@ from typing import List
 
 import keras
 
+
 class SequentialLayer(keras.layers.Layer):
-  def __init__(self, layers: List[keras.layers.Layer]):
-    super().__init__()
+    def __init__(self, layers: List[keras.layers.Layer]):
+        super().__init__()
 
-    if not layers:
-      raise ValueError("No layers provided.")
+        if not layers:
+            raise ValueError("No layers provided.")
 
-    self._layers = layers
+        self._layers = layers
 
-  def call(self, inputs):
-    x = inputs
-    y = None
-    for l in self._layers:
-      y = l(x)
-      x = y
-    return y
+    def call(self, inputs):
+        x = inputs
+        y = None
+        for l in self._layers:
+            y = l(x)
+            x = y
+        return y
 
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-      'layers': self._layers
-    })
-    return config
+    def get_config(self):
+        config = super().get_config()
+        config.update({"layers": self._layers})
+        return config
 
-  @classmethod
-  def from_config(cls, config):
-    return SequentialLayer(**config)
+    @classmethod
+    def from_config(cls, config):
+        return SequentialLayer(**config)
 
-  @property
-  def layers(self) -> List[keras.layers.Layer]:
-    return self._layers
+    @property
+    def layers(self) -> List[keras.layers.Layer]:
+        return self._layers

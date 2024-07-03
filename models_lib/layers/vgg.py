@@ -31,37 +31,42 @@
 import keras
 from models_lib.layers.utils.sequential import SequentialLayer
 
+
 class VGGBlock(SequentialLayer):
-    def __init__(self,
-                 num_convolutions: int,
-                 num_filters: int):
+    def __init__(self, num_convolutions: int, num_filters: int):
         self._num_convolutions = num_convolutions
         if self.num_convolutions < 1:
             raise ValueError(
-                "VGGBlock must have a positive, nonzero convolution count.")
+                "VGGBlock must have a positive, nonzero convolution count."
+            )
 
         self._num_filters = num_filters
         if self.num_filters < 1:
-            raise ValueError(
-                "VGGBlock convolutions must have at least one channel.")
+            raise ValueError("VGGBlock convolutions must have at least one channel.")
 
         layers = []
         for _ in range(self.num_convolutions):
-            layers.append(keras.layers.Conv2D(filters=self.num_filters,
-                                              kernel_size=3,
-                                              padding='same',
-                                              activation='relu'))
-    
+            layers.append(
+                keras.layers.Conv2D(
+                    filters=self.num_filters,
+                    kernel_size=3,
+                    padding="same",
+                    activation="relu",
+                )
+            )
+
         layers.append(keras.layers.MaxPool2D(pool_size=2, strides=2))
 
         super().__init__(layers)
 
     def get_config(self):
         config = super().get_config()
-        config.update({
-            'num_convolutions': self._num_convolutions,
-            'num_filters': self._num_filters
-        })
+        config.update(
+            {
+                "num_convolutions": self._num_convolutions,
+                "num_filters": self._num_filters,
+            }
+        )
         return config
 
     @classmethod
@@ -76,6 +81,7 @@ class VGGBlock(SequentialLayer):
     def num_filters(self) -> int:
         return self._num_filters
 
+
 class VGGClassifier(SequentialLayer):
     def __init__(self, num_classes: int):
         if num_classes < 0:
@@ -85,18 +91,16 @@ class VGGClassifier(SequentialLayer):
 
         layers = [
             keras.layers.Flatten(),
-            keras.layers.Dense(4096, activation='relu'),
-            keras.layers.Dense(4096, activation='relu'),
-            keras.layers.Dense(self.num_classes, activation='softmax')
+            keras.layers.Dense(4096, activation="relu"),
+            keras.layers.Dense(4096, activation="relu"),
+            keras.layers.Dense(self.num_classes, activation="softmax"),
         ]
 
         super().__init__(layers)
 
     def get_config(self):
         config = super().get_config()
-        config.update({
-            'num_classes': self.num_classes
-        })
+        config.update({"num_classes": self.num_classes})
         return config
 
     @classmethod

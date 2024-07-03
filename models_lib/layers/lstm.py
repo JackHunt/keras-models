@@ -30,6 +30,7 @@
 
 import keras
 
+
 class LSTMCell(keras.layers.Layer):
     def __init__(self):
         self._in_gate = None
@@ -41,9 +42,11 @@ class LSTMCell(keras.layers.Layer):
 
     def get_config(self):
         config = super().get_config()
-        config.update({
-            #
-        })
+        config.update(
+            {
+                #
+            }
+        )
 
         return config
 

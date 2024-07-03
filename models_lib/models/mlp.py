@@ -33,79 +33,87 @@ from typing import List, Tuple, Union
 import keras
 from models_lib.layers.utils.sequential import SequentialLayer
 
+
 class MLP(keras.Model):
-  def __init__(self,
-               hidden_sizes: Union[List[int], Tuple[int]],
-               output_size: int,
-               hidden_activation: str = 'relu', # TODO: Union with ops
-               output_activation: str = 'relu', # TODO: ditto
-               name="MLP",
-               **kwargs):
-    super().__init__(name=name, **kwargs)
+    def __init__(
+        self,
+        hidden_sizes: Union[List[int], Tuple[int]],
+        output_size: int,
+        hidden_activation: str = "relu",  # TODO: Union with ops
+        output_activation: str = "relu",  # TODO: ditto
+        name="MLP",
+        **kwargs
+    ):
+        super().__init__(name=name, **kwargs)
 
-    self._hidden_sizes = hidden_sizes
-    self._output_size = output_size
-    self._hidden_activation = hidden_activation
-    self._output_activation = output_activation
+        self._hidden_sizes = hidden_sizes
+        self._output_size = output_size
+        self._hidden_activation = hidden_activation
+        self._output_activation = output_activation
 
-    if self.hidden_sizes:
-      if any(n <= 0 for n in self.hidden_sizes):
-        raise ValueError(
-          "All hidden layer sizes must be greater than or equal to one.")
+        if self.hidden_sizes:
+            if any(n <= 0 for n in self.hidden_sizes):
+                raise ValueError(
+                    "All hidden layer sizes must be greater than or equal to one."
+                )
 
-      self._hidden = SequentialLayer([
-        keras.layers.Dense(n, activation=self.hidden_activation)
-          for n in self.hidden_sizes
-      ])
-    else:
-      self._hidden = None
+            self._hidden = SequentialLayer(
+                [
+                    keras.layers.Dense(n, activation=self.hidden_activation)
+                    for n in self.hidden_sizes
+                ]
+            )
+        else:
+            self._hidden = None
 
-    if self.output_size <= 0:
-      raise ValueError(
-        "Output layer size must be greater than or equal to one.")
+        if self.output_size <= 0:
+            raise ValueError("Output layer size must be greater than or equal to one.")
 
-    self._output_layer = keras.layers.Dense(self.output_size,
-                                            activation=self.output_activation)
+        self._output_layer = keras.layers.Dense(
+            self.output_size, activation=self.output_activation
+        )
 
-  def call(self, inputs):
-    y = self.hidden_layers(inputs)
-    return self.output_layer(y)
+    def call(self, inputs):
+        y = self.hidden_layers(inputs)
+        return self.output_layer(y)
 
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-      'hidden_sizes': self.hidden_sizes,
-      'output_size': self.output_size,
-      'hidden_activation': self.hidden_activation,
-      'output_activation': self.output_activation
-    })
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "hidden_sizes": self.hidden_sizes,
+                "output_size": self.output_size,
+                "hidden_activation": self.hidden_activation,
+                "output_activation": self.output_activation,
+            }
+        )
 
-    return config
+        return config
 
-  @classmethod
-  def from_config(cls, config):
-    return MLP(**config)
+    @classmethod
+    def from_config(cls, config):
+        return MLP(**config)
 
-  @property
-  def hidden_sizes(self) -> Union[List[int], Tuple[int]]:
-    return self._hidden_sizes
+    @property
+    def hidden_sizes(self) -> Union[List[int], Tuple[int]]:
+        return self._hidden_sizes
 
-  @property
-  def output_size(self) -> int:
-    return self._output_size
+    @property
+    def output_size(self) -> int:
+        return self._output_size
 
-  @property
-  def hidden_activation(self) -> str:
-    self._hidden_activation
+    @property
+    def hidden_activation(self) -> str:
+        self._hidden_activation
 
-  @property
-  def output_activation(self) -> str:
-    return self._output_activation
+    @property
+    def output_activation(self) -> str:
+        return self._output_activation
 
-  @property
-  def hidden_layers(self) -> SequentialLayer:
-    return self._hidden
+    @property
+    def hidden_layers(self) -> SequentialLayer:
+        return self._hidden
 
-  @property
-  def output_layer(self) -> keras.layers.Dense:
-    return self._output_layer
+    @property
+    def output_layer(self) -> keras.layers.Dense:
+        return self._output_layer

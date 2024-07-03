@@ -34,14 +34,15 @@ import tensorflow as tf
 
 from models_lib.utils import data
 
+
 def create_dataset(config: Dict) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
-  name = config['name']
-  options = config['options']
+    name = config["name"]
+    options = config["options"]
 
-  if name == "iris":
-    return data.create_iris(**options)
+    if name == "iris":
+        return data.create_iris(**options)
 
-  if name == "cifar_100":
-    return data.create_cifar_100(**options)
+    if name == "cifar_100":
+        return data.create_cifar_100(**options)
 
-  raise ValueError(f"Unknown dataset: {name}")
+    raise ValueError(f"Unknown dataset: {name}")
