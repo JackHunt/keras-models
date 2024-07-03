@@ -6,3 +6,5 @@ dependencies:
   - tensorflow-gpu
   - tensorflow-datasets
   - keras-gpu
+  - pip:
+      - wandb
