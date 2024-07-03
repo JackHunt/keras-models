@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 
-# Copyright (c) 2022, Jack Hunt
+# Copyright (c) 2024, Jack Hunt
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -33,12 +33,14 @@
 
 from setuptools import setup
 
-setup(name='models_lib',
-      version='0.1',
-      packages=[
-            'models_lib',
-            'models_lib.layers',
-            'models_lib.layers.utils',
-            'models_lib.models',
-            'models_lib.utils'
-      ])
+setup(
+    name="models_lib",
+    version="0.1",
+    packages=[
+        "models_lib",
+        "models_lib.layers",
+        "models_lib.layers.utils",
+        "models_lib.models",
+        "models_lib.utils",
+    ],
+)
