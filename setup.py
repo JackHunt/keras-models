@@ -39,7 +39,6 @@ setup(
     packages=[
         "models_lib",
         "models_lib.layers",
-        "models_lib.layers.utils",
         "models_lib.models",
         "models_lib.utils",
     ],
