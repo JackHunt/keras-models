@@ -5,7 +5,7 @@ architecture:
       - 16
       - 8
     output_size: 3
-    hidden_activation: sigmoid
+    hidden_activation: relu
     output_activation: sigmoid
 
 dataset:
@@ -19,11 +19,16 @@ training:
   optimiser:
     type: sgd
     spec:
-      learning_rate: 0.01
+      learning_rate: 0.001
   losses:
     - categorical_crossentropy
   loss_weights: null
-  metrics: null
+  metrics:
+    - accuracy
+    - precision
+    - recall
   val_split: 0.2
 
-wandb_project: "GH Keras Models"
+wandb:
+  project: "keras-models"
+  name: "mlp_iris"
