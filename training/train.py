@@ -31,7 +31,7 @@
 import argparse
 
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import yaml
 import wandb
@@ -60,7 +60,9 @@ def get_optimiser(config: Dict) -> Optimizer:
     raise ValueError(f"Unknown optimiser: {config['type']}")
 
 
-def get_callbacks(out_dir: str) -> None:
+def get_callbacks(
+    out_dir: str, use_tensorboard: bool = False, use_wandb: bool = False
+) -> List[keras.callbacks.Callback]:
     callbacks = []
 
     if use_tensorboard:
@@ -68,18 +70,20 @@ def get_callbacks(out_dir: str) -> None:
 
     if use_wandb:
         callbacks += [
-            WandbMetricsLogger(log_freq=5),
-            # WandbModelCheckpoint(filepath=Path(out_dir, "models"))
+            WandbMetricsLogger(),
+            WandbModelCheckpoint(filepath=Path(out_dir, "models")),
         ]
 
     return callbacks
 
 
-def train(config: Dict, out_dir: str) -> Tuple[keras.callbacks.History, Model]:
+def train(
+    config: Dict, out_dir: str, use_wandb: bool = False, use_tensorboard: bool = False
+) -> Tuple[keras.callbacks.History, Model]:
     train_config = config["training"]
 
-    model = create_model(config["architecture"])
-    model.compile(
+    m = create_model(config["architecture"])
+    m.compile(
         optimizer=get_optimiser(train_config["optimiser"]),
         loss=train_config["losses"],
         loss_weights=train_config["loss_weights"],
@@ -87,7 +91,7 @@ def train(config: Dict, out_dir: str) -> Tuple[keras.callbacks.History, Model]:
     )
 
     ds = create_dataset(config["dataset"])
-    if type(ds) == tuple:
+    if isinstance(ds, tuple):
         if "val_split" in train_config:
             raise ValueError(
                 "val_split cannot be specified when using an already split tfds."
@@ -102,16 +106,18 @@ def train(config: Dict, out_dir: str) -> Tuple[keras.callbacks.History, Model]:
 
         train_ds, val_ds = split_dataset(ds, val_split)
 
-    model.summary()
+    m.summary()
 
-    history = model.fit(
+    history = m.fit(
         train_ds,
         epochs=train_config["epochs"],
-        callbacks=get_callbacks(out_dir),
+        callbacks=get_callbacks(
+            out_dir, use_tensorboard=use_tensorboard, use_wandb=use_wandb
+        ),
         validation_data=val_ds,
     )
 
-    return history, model
+    return history, m
 
 
 if __name__ == "__main__":
@@ -125,18 +131,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    use_wandb = args.wandb
-    use_tensorboard = args.tensorboard
-
     with open(args.config_file, "r") as f:
-        config = yaml.safe_load(f)
+        cfg = yaml.safe_load(f)
 
-    out_dir = args.artifact_dir if args.artifact_dir else "."
+    if args.wandb:
+        wandb.init(**cfg["wandb"], config=cfg)
 
-    if use_wandb:
-        wandb.init(project=config["wandb_project"], config=config)
+    keras_history, model = train(cfg, args.artifact_dir if args.artifact_dir else ".")
 
-    keras_history, model = train(config, out_dir)
-
-    if use_wandb:
+    if args.wandb:
         wandb.finish()
