@@ -50,7 +50,7 @@ def create_resnet(spec: Dict) -> Union[_ResNet, Sequential]:
 
     num_classes = spec["num_classes"]
     if not num_classes:
-        return resnet(resnet_size)
+        return resnet(resnet_arch)
 
     assert num_classes > 0
 
