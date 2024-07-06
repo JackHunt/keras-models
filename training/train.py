@@ -138,6 +138,13 @@ if __name__ == "__main__":
         wandb.init(**cfg["wandb"], config=cfg)
 
     keras_history, model = train(cfg, args.artifact_dir if args.artifact_dir else ".")
+    keras_history, model = train(
+        cfg,
+        args.artifact_dir if args.artifact_dir else ".",
+        args.pretrain,
+        use_wandb=args.wandb,
+        use_tensorboard=args.tensorboard,
+    )
 
     if args.wandb:
         wandb.finish()
