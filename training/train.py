@@ -137,7 +137,6 @@ if __name__ == "__main__":
     if args.wandb:
         wandb.init(**cfg["wandb"], config=cfg)
 
-    keras_history, model = train(cfg, args.artifact_dir if args.artifact_dir else ".")
     keras_history, model = train(
         cfg,
         args.artifact_dir if args.artifact_dir else ".",
