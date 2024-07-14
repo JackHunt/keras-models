@@ -35,14 +35,22 @@ import tensorflow as tf
 from models_lib.utils import data
 
 
-def create_dataset(config: Dict) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
+def create_dataset(
+    config: Dict,
+    pretraining: bool = False,
+    pretraining_grid_shape: Tuple[int, int] = None,
+) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
     name = config["name"]
     options = config["options"]
 
     if name == "iris":
+        if pretraining_grid_shape is not None:
+            raise NotImplementedError
         return data.create_iris(**options)
 
     if name == "cifar_100":
-        return data.create_cifar_100(**options)
+        return data.create_cifar_100(
+            **options, pretraining_grid_shape=pretraining_grid_shape
+        )
 
     raise ValueError(f"Unknown dataset: {name}")

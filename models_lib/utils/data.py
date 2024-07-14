@@ -33,6 +33,8 @@ from typing import Tuple
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from models_lib.utils.jigsaw import JigsawDataset
+
 
 def normalise_images(
     ds: tf.data.Dataset, dtype: tf.DType = tf.float32
@@ -133,6 +135,7 @@ def create_cifar_100(
     dtype: tf.DType = tf.float32,
     normalise: bool = True,
     target_shape: Tuple[int, int] = None,
+    pretraining_grid_shape: Tuple[int, int] = None,
 ) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
     target_shape = tf.convert_to_tensor(target_shape) if target_shape else None
 
@@ -148,6 +151,17 @@ def create_cifar_100(
             batch_size=batch_size,
             ds_info=ds_info if training else None,
             training=training,
+        )
+
+    if pretraining_grid_shape is not None:
+        # TODO: verify prefecting & batching works as expected.
+        return (
+            JigsawDataset(
+                preprocess(ds_train, True), pretraining_grid_shape
+            ).get_dataset(),
+            JigsawDataset(
+                preprocess(ds_test, False), pretraining_grid_shape
+            ).get_dataset(),
         )
 
     return preprocess(ds_train, True), preprocess(ds_test, False)

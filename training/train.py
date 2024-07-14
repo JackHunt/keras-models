@@ -78,11 +78,17 @@ def get_callbacks(
 
 
 def train(
-    config: Dict, out_dir: str, use_wandb: bool = False, use_tensorboard: bool = False
+    config: Dict,
+    out_dir: str,
+    use_wandb: bool = False,
+    use_tensorboard: bool = False,
+    pretrain: bool = False,
 ) -> Tuple[keras.callbacks.History, Model]:
     train_config = config["training"]
 
-    m = create_model(config["architecture"])
+    pretrain_grid_shape = (8, 8) if pretrain else None
+
+    m = create_model(config["architecture"], pretraining_grid_shape=pretrain_grid_shape)
     m.compile(
         optimizer=get_optimiser(train_config["optimiser"]),
         loss=train_config["losses"],
@@ -90,7 +96,7 @@ def train(
         metrics=train_config["metrics"],
     )
 
-    ds = create_dataset(config["dataset"])
+    ds = create_dataset(config["dataset"], pretraining_grid_shape=pretrain_grid_shape)
     if isinstance(ds, tuple):
         if "val_split" in train_config:
             raise ValueError(
@@ -99,7 +105,7 @@ def train(
 
         train_ds, val_ds = ds
     else:
-        if not "val_split" in train_config:
+        if "val_split" not in train_config:
             raise ValueError("val_split must be specified when using a non split tfds.")
 
         val_split = train_config["val_split"]
@@ -128,6 +134,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tensorboard", default=False, action=argparse.BooleanOptionalAction
     )
+    parser.add_argument(
+        "--pretraining", default=False, action=argparse.BooleanOptionalAction
+    )
 
     args = parser.parse_args()
 
@@ -135,6 +144,8 @@ if __name__ == "__main__":
         cfg = yaml.safe_load(f)
 
     if args.wandb:
+        if args.pretrain:
+            cfg["wandb"]["name"] += "_pretrain"
         wandb.init(**cfg["wandb"], config=cfg)
 
     keras_history, model = train(
@@ -143,6 +154,7 @@ if __name__ == "__main__":
         args.pretrain,
         use_wandb=args.wandb,
         use_tensorboard=args.tensorboard,
+        pretrain=args.pretrain,
     )
 
     if args.wandb:

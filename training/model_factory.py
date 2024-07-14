@@ -28,7 +28,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 from keras import Model, Sequential
 from keras.layers import Dense, Flatten
@@ -75,7 +75,9 @@ def create_googlenet(spec: Dict) -> GoogLeNet:
     return GoogLeNet(**spec)
 
 
-def create_model(architecture: Dict) -> Model:
+def create_model(
+    architecture: Dict, pretrain_grid_shape: Tuple[int, int] = None
+) -> Model:
     arch_type = architecture["arch_type"].lower()
     spec = architecture["spec"]
 
